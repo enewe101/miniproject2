@@ -1,0 +1,99 @@
+\documentclass[letterpaper]{article}
+\setlength{\columnsep}{0.75cm}
+\usepackage{algorithm2e}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{framed, color}
+\usepackage{soul}
+\definecolor{shadecolor}{rgb}{.93,.93,.93}
+\definecolor{blu}{rgb}{0,0,1}
+\newcommand{\td}[1]{{\color{blu}\hl{TODO: #1}}}
+\definecolor{shadecolor}{rgb}{.93,.93,.93}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{gensymb}
+\usepackage[hmargin=1in,vmargin=1in]{geometry}
+\usepackage{scrextend}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{4mm plus1mm minus1mm}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+
+\title{}
+\author{}
+ 
+\parindent0pt \parskip8pt
+\begin{document}
+\maketitle
+Background \\
+- Text classification has an enormous number of practical applications, from
+	spam filtering\cite{wang2013}, to triaging helpdesk requests, to 
+	recommender systems (using review text)\cite{jannach2010recommender}.  An 
+	exciting recent application 
+	is the inference of latent attributes about a user based on their posts in 
+	social media \cite{liu2013s,liu2012using,al2012homophily}.
+
+- There is is a rich body of literature that has explored many aspects of
+	the text classification problem.  Chosing the set of features to represent
+	documents is critical to accurate classification, and various options 
+	have been investigated\cite{leopold2002text, wang2013}.  Features may
+	consist of frequency counds, boolean variables that only indicate whether
+	a word is present (but don't show its frequency)\cite{leopold2002text}.  
+	But often, before feautures are calculated, some pre-processing of the
+	documents is often done.  The most 
+	frequent and most rare words are sometimes ignored because they tend to
+	be less descriminating \cite{leopold2002text}.  
+	A list of stopwords can be used, which is a set 
+	of common words deemed to be not useful for text classification purposes 
+	\cite{leopold2002text}.
+	The words in the documents may also be simplified by stemming or 
+	lemmatization, for example, to convert \texttt{running} and \texttt{ran}
+	both to the more basic infinitive form \texttt{run} \cite{leopold2002text}.
+	Once Feature vectors are obtained, they can be 
+	further treated by multiplying the feature vectors (component wise) by a 
+	weighting scheme\cite{leopold2002text}.
+	The application of weights has a dual purpose.  
+	Primarily, it regulates the degree of influence that given features have
+	over the decision boundary to be learned, which ideally should be made to
+	reflect the degree to which given features are descriminative 
+	\cite{leopold2002text}.  
+	Secondarily, it can
+	be used to normalize the vectors to unit length according to some metric
+	(usually the euclidean distance or L2-norm)\cite{leopold2002text}.  
+	Normalization helps 
+	overcome the fact that longer documents have higher frequencies overall, 
+	which otherwise can be a source of bias\cite{leopold2002text}.
+
+	In addition to choosing how to represent the data, one must choose the
+	learning algorithm.  The performance of learning algorithms have been
+	scrutinized in a wide variety of contexts.  Roughly ordered in order
+	of increasing accuracy, the algorithms that have been found useful in
+	text classification include: naive Bayes (NB), k-nearest-neighbor (kNN), 
+	latent Dirichlet allocation (LDA), and support vector machines (SVMs).
+	
+
+
+
+Choice of inference method (learner) \\
+
+Preprocessing \\
+- lematization offers little or no benefit when using SVM 
+	\cite{leopold2002text}\\
+
+Normalization \\
+- l2-normilization is helpful for SVM \cite{leopold2002text}
+
+Choice of term weighting scheme \\ 
+- The choice of weighting scheme is more important than the choice
+	of kernel \cite{leopold2002text}\\
+- redundancy does better than idf\cite{leopold2002text} \\
+
+SVM
+- the rbf kernal appear beats linear and polynomial \cite{leopold2002text} \\
+
+\bibliography{bib}
+\bibliographystyle{plain}
+\end{document}
+
+
