@@ -15,7 +15,7 @@ from collections import defaultdict, Counter
 def merge_input_output():
 	input_reader = csv.reader(open('data/raw/train_input.csv', 'r'))
 	output_reader = csv.reader(open('data/raw/train_output.csv', 'r'))
-	writer = csv.writer(open('data/raw/train_.csv', 'w'))
+	writer = csv.writer(open('data/raw/train.csv', 'w'))
 
 	for input_row, output_row in izip(input_reader, output_reader):
 		writer.writerow(input_row + output_row[1:])
@@ -23,6 +23,14 @@ def merge_input_output():
 
 
 class Data(object):
+	'''
+		to use this file, make sure that the raw data files
+			- train_input.csv
+			- train_output.csv
+			- test_input.csv
+		have been placed in /data/raw
+	'''
+
 
 	# some useful regular expressions
 	NON_ALPHA = re.compile(r'[^a-zA-Z]+')
@@ -30,7 +38,7 @@ class Data(object):
 
 	# Where shold things be stored and read?
 	FNAMES = {
-		'read':'data/raw/train.csv',
+		'raw':'data/raw/train.csv',
 		'as_frequencies': 'data/cache/frequencies.json',
 		'lemmatized': 'data/cache/lemmatized.json',
 		'hypernyms': 'data/cache/hypernyms.json',
@@ -50,6 +58,12 @@ class Data(object):
 
 
 	def __init__(self, limit=None, fname="data/raw/train.csv"):
+
+		# check if the merged data file exists, if not, make it
+		if not os.path.isfile(self.FNAMES['raw']):
+			print ('merging training input and output on the first '
+				'use of Data...')
+			merge_input_output()
 
 		# load raw data into memory
 		reader = csv.reader(open(fname, 'r'))
