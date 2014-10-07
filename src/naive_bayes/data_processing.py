@@ -1,3 +1,4 @@
+from itertools import izip
 import csv
 import os
 import json
@@ -10,23 +11,14 @@ except ImportError:
 
 from collections import defaultdict, Counter
 
-def sort_by_category(input_fname, output_fname):
 
-	input_fh = open(input_fname, 'r')
-	output_fh = open(output_fname, 'w')
+def merge_input_output():
+	input_reader = csv.reader(open('data/raw/train_input.csv', 'r'))
+	output_reader = csv.reader(open('data/raw/train_output.csv', 'r'))
+	writer = csv.writer(open('data/raw/train_.csv', 'w'))
 
-	reader = csv.reader(input_fh)
-
-	sorted_data = defaultdict(lambda: [])
-	for row in reader:
-		features = row[1].split()
-		class_name = row[2]
-		sorted_data[class_name].append([class_name] + features)
-
-	output_fh.write(json.dumps(sorted_data, indent=2))
-
-	input_fh.close()
-	output_fh.close()
+	for input_row, output_row in izip(input_reader, output_reader):
+		writer.writerow(input_row + output_row[1:])
 
 
 
