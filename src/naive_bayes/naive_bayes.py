@@ -15,7 +15,7 @@ class NaiveBayesException(Exception):
 class NaiveBayesCrossValidationException(Exception):
 	pass
 
-class NaiveBayesCrossValidationTester(object):
+class CrossValTester(object):
 	'''
 	Given a data set, allows one to perform cross validation on the 
 	NaiveBayesTextClassifier.
@@ -62,7 +62,7 @@ class NaiveBayesCrossValidationTester(object):
 		# a new fold, the test set can be removed rather than retraining on
 		# the whole training set.  We therefore begin by training on the whole 
 		# set.  This has been tested to ensure it does not cause "pollution".
-		self.classifier = NewNaiveBayesTextClassifier()
+		self.classifier = NaiveBayesClassifier()
 		self.classifier.train(self.dataset)
 
 
@@ -154,7 +154,7 @@ class NaiveBayesCrossValidationTester(object):
 
 
 
-class NewNaiveBayesTextClassifier(object):
+class NaiveBayesClassifier(object):
 	'''
 	Training consists of providing the classifier a set of examples having
 	the structure:
@@ -170,7 +170,6 @@ class NewNaiveBayesTextClassifier(object):
 	IMPOSSIBLE = None
 
 	def __init__(self):
-		self.examples = Counter()
 
 		# global counts is used to keep track of the set of all features
 		# if a given feature count goes down to zero, then we don't consider
@@ -195,10 +194,14 @@ class NewNaiveBayesTextClassifier(object):
 	def add_example(self, example):
 		class_name = example[0]
 		features = example[1:]
+		
+		# accomodate counter-based and vector-based features:
+		if isinstance(features[0], (dict, Counter)):
+			features = features[0]
 
-		self.examples[example] += 1
 		self.num_examples += 1
 		self.class_counts[class_name] += 1
+
 		self.global_feature_counts.update(features)
 		self.feature_counts[class_name].update(features)
 
@@ -208,21 +211,13 @@ class NewNaiveBayesTextClassifier(object):
 
 	def remove_example(self, example):
 
-		# raise an exception if attempting to remove an example that the 
-		# classifier doesn't actually have
-		if example not in self.examples:
-			raise NaiveBayesException(
-				'The instance of NaiveBayesTextClassifier did not have that'
-				' example, so it could not be removed: %s' % str(example)
-			)
-
 		features = example[1:]
-		class_name = example[0]
 
-		# remove the example and its contribution to feature counts
-		self.examples[example] -= 1
-		if self.examples[example] == 0:
-			del self.examples[example]
+		# accomodate counter-based and vector-based features:
+		if isinstance(features[0], (dict, Counter)):
+			features = features[0]
+
+		class_name = example[0]
 
 		self.num_examples -= 1
 		self.class_counts[class_name] -= 1
@@ -275,8 +270,6 @@ class NewNaiveBayesTextClassifier(object):
 		return self._class_names
 
 
-
-	# TODO: test
 	def get_cond_prob(self, feature, class_name, use_add_one_smoothing=True):
 		num_features = self.get_num_features()
 		num_classes = self.get_num_classes()
@@ -293,14 +286,12 @@ class NewNaiveBayesTextClassifier(object):
 
 		return counts_for_feature_in_class / float(num_examples_in_class)
 
+
 	def get_prior(self, class_name):
 		num_examples_in_class = self.class_counts[class_name]
 		return num_examples_in_class / float(self.num_examples)
 
 
-	# TODO: test
-	# TODO: encorporate add_1_smoothing
-	# TODO: encorporate the class prior
 	def classify(self, example_features):
 		'''
 		Takes in an example_feature vector (which is missing the first 
@@ -308,6 +299,11 @@ class NewNaiveBayesTextClassifier(object):
 		class, based on the assumption that features are independant of one
 		another.
 		'''
+
+		# accomodate counter-based and vector-based features:
+		if isinstance(example_features[0], (dict, Counter)):
+			example_features = example_features[0]
+
 		# for each class, calculate a score equal to the likelihood that 
 		# that class would produce this feature vector
 		class_scores = defaultdict(lambda: 0)
@@ -344,56 +340,4 @@ class NewNaiveBayesTextClassifier(object):
 			predicted_class = self.class_counts.keys()[0]
 
 		return predicted_class
-
-
-
-
-class NaiveBayesClassifier(object):
-	'''
-	This represents a naive Bayes classifier.  To function it needs a model
-	which can either be provided by a training dataset 
-	or read from file (not implemented)
-	'''
-
-	def __init__(self):
-		self.categories = []
-		self.features = set()
-		self.condProbs = {}
-
-	def buildFromTrainingSet(self, pTrainingSet):
-		self.features = pTrainingSet.getFeatures()
-		self.categories = pTrainingSet.getCategories()
-		condProbs = {}
-
-		for category in self.categories:
-			for feature in self.features:
-				self.condProbs[(category, feature)] = (
-					pTrainingSet.getProbability(category, feature))
-
-
-	def classify(self, instance):
-
-		scores = {}
-		for category in self.categories:
-			scores[category] = 0
-
-		for feature in instance.getFeatures():
-			for category in self.categories:
-
-				# If the feature arises for the given category, use the
-				# add the conditional probability of its occurrence given the
-				# category to the score for that category.  Otherwise add 0
-				add_to_score = 0
-				try:
-					add_to_score = self.condProbs[(category, feature)]
-				except KeyError:
-					pass
-
-				scores[category] += add_to_score
-
-		verdict = sorted(scores.items(), None, lambda x: x[1], True)[0][0]
-
-		return verdict
-
-
 

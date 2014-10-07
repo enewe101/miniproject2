@@ -1,4 +1,5 @@
 data/*
+*.swp
 *.aux
 *.bbl
 *.blg
