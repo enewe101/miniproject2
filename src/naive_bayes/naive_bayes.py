@@ -139,8 +139,8 @@ class CrossValTester(object):
 
 			for example in test_set:
 
-				example_class = example[0]
-				example_features = example[1:]
+				example_class = example[2]
+				example_features = example[1]
 				prediction = self.classifier.classify(example_features)
 
 				if prediction == example_class:
@@ -192,13 +192,9 @@ class NaiveBayesClassifier(object):
 
 	
 	def add_example(self, example):
-		class_name = example[0]
-		features = example[1:]
+		class_name = example[2]
+		features = example[1]
 		
-		# accomodate counter-based and vector-based features:
-		if isinstance(features[0], (dict, Counter)):
-			features = features[0]
-
 		self.num_examples += 1
 		self.class_counts[class_name] += 1
 
@@ -210,14 +206,8 @@ class NaiveBayesClassifier(object):
 
 
 	def remove_example(self, example):
-
-		features = example[1:]
-
-		# accomodate counter-based and vector-based features:
-		if isinstance(features[0], (dict, Counter)):
-			features = features[0]
-
-		class_name = example[0]
+		class_name = example[2]
+		features = example[1]
 
 		self.num_examples -= 1
 		self.class_counts[class_name] -= 1
@@ -300,33 +290,24 @@ class NaiveBayesClassifier(object):
 		another.
 		'''
 
-		# accomodate counter-based and vector-based features:
-		if isinstance(example_features[0], (dict, Counter)):
-			example_features = example_features[0]
-
 		# for each class, calculate a score equal to the likelihood that 
 		# that class would produce this feature vector
 		class_scores = defaultdict(lambda: 0)
 		for class_name in self.get_class_names():
 			for feature in example_features:
 
+				feature_count = example_features[feature]
 				cond_prob = self.get_cond_prob(feature, class_name)
 
-				# we have to handle the fact that (if add 1 smoothing is not
-				# used, then a class cand be found to be 'impossible'
-				if (
-					cond_prob == 0 or 
-					class_scores[class_name] is self.IMPOSSIBLE
-				):
-					class_scores[class_name] = self.IMPOSSIBLE
-
-				# summing log likelihoods is like taking the straight product.
-				else:
-					class_scores[class_name] += np.log(cond_prob)
+				# summing log likelihoods is like multiplying.
+				class_scores[class_name] += feature_count * np.log(cond_prob)
 
 		# "multiply" each class's score by the class' prior probability 
 		for class_name in class_scores:
-			class_scores[class_name] += np.log(self.get_prior(class_name))
+			try:
+				class_scores[class_name] += np.log(self.get_prior(class_name))
+			except TypeError:
+				print class_name
 
 		# Which class was most likely? Remove impossible classes, then sort.
 		feasible_class_scores = filter(

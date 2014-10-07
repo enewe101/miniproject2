@@ -1,4 +1,5 @@
 from itertools import izip
+import numpy as np
 import csv
 import os
 import json
@@ -23,39 +24,44 @@ def merge_input_output():
 
 
 class Data(object):
+
 	'''
-		to use this file, make sure that the raw data files
+		to use this file, make sure that the following raw data files
+		have been placed in /data/raw:
+
 			- train_input.csv
 			- train_output.csv
 			- test_input.csv
-		have been placed in /data/raw
-	'''
 
+	'''
 
 	# some useful regular expressions
 	NON_ALPHA = re.compile(r'[^a-zA-Z]+')
 	NON_ALPHANUM = re.compile(r'[^a-zA-Z0-9_]+')
+	NUMBER = re.compile(r'\d+')
 
-	# Where shold things be stored and read?
+	# Where should things be stored and read?
 	FNAMES = {
 		'raw':'data/raw/train.csv',
 		'as_frequencies': 'data/cache/frequencies.json',
 		'lemmatized': 'data/cache/lemmatized.json',
 		'hypernyms': 'data/cache/hypernyms.json',
-		'tficf': 'data/cache/tficf.json',
+		'as_tficf': 'data/cache/as_tficf.json',
 		'class_counts': 'data/cache/class_counts.json',
+		'cf_scores': 'data/cache/cf_scores.json',
 		'icf_scores': 'data/cache/icf_scores.json',
 	}
 
 	# Keep things in cache so we don't need to keep calculating
 	CACHE = {}
 
-
 	# Some flags
 	NOT_CACHED = 0
 	FILE_CACHED = 1
 	MEM_CACHED = 2
 
+	# Other constants
+	NUM_CLASSES = 4
 
 	def __init__(self, limit=None, fname="data/raw/train.csv"):
 
@@ -95,11 +101,11 @@ class Data(object):
 	def get_cache(self, name):
 
 		if name in self.CACHE:
-			print 'loading from memory cache'
+			print 'using %s found in memory cache' % name
 			return self.CACHE[name]
 
 		if os.path.isfile(self.FNAMES[name]):
-			print 'loading from file cache'
+			print 'loading %s from file cache' % name
 			return json.loads(open(self.FNAMES[name]).read())
 
 		raise IOError('%s was not found in the cache' % name)
@@ -152,6 +158,8 @@ class Data(object):
 		if use_cache and self.check_cache('hypernyms'):
 			return self.get_cache('hypernyms')
 
+		print 'calculating hypernym counts...'
+
 		w = nltk.corpus.wordnet
 
 		return_data = []
@@ -191,6 +199,8 @@ class Data(object):
 		if use_cache and self.check_cache('class_counts'):
 			return self.get_cache('class_counts')
 
+		print 'calculating class-counts...'
+
 		class_counts = defaultdict(lambda: Counter())
 		for row in self.data:
 
@@ -208,15 +218,19 @@ class Data(object):
 		return class_counts
 
 
-	def tficf(self, use_cache=True):
+	def compute_cf_scores(self, use_cache=True):
 		'''
-		the features are weighted frequency counts, where the frequency
-		count is weighted by inverse class frequency.
+			This computes the class-frequency for words, that is, for each
+			word in the vocabulary of the corpus, how many classes does it
+			appear in.  Since we have 4 classes, this has to be a number from
+			1 to 4.
 		'''
 
 		# check for cached data first
-		if use_cache and self.check_cache('tficf'):
-			return self.get_cache('tficf')
+		if use_cache and self.check_cache('cf_scores'):
+			return self.get_cache('cf_scores')
+
+		print 'calculating cf_scores...'
 
 		# first, we must find the counts on a per-class basis
 		class_counts = self.get_class_counts(use_cache)
@@ -226,7 +240,7 @@ class Data(object):
 		vocab = set()
 		for class_name in class_counts:
 			vocab.update(class_counts[class_name].keys())
-		
+
 		print 'total size of vocabulary: %d words.' % len(vocab)
 
 		icf_scores = {}
@@ -239,8 +253,69 @@ class Data(object):
 			]
 			icf_scores[word] = sum(presence)
 
+		self.cache('cf_scores', icf_scores)
+
+		return icf_scores
+
+
+	def compute_icf_scores(self, use_cache=True):
+		'''
+			This computes the inverse class frequency score for all the words
+			in the vocabulary of the corpus.  This is a kind of relevancy
+			weighting.
+		'''
+
+		# check for cached data first
+		if use_cache and self.check_cache('icf_scores'):
+			return self.get_cache('icf_scores')
+
+		print 'calculating icf_scores...'
+
+		# get cf_scores and convert to icf_scores
+		cf_scores = self.compute_cf_scores(use_cache)
+		icf_scores = {}
+		for word in cf_scores:
+			icf_scores[word] = np.log2(
+				1 + self.NUM_CLASSES / float(cf_scores[word]))
+
+		# cache the icf_scores
 		self.cache('icf_scores', icf_scores)
 
+		return icf_scores
+
+
+	def as_tficf(self, data_part='train', use_cache=True):
+
+		# check for cached data first
+		if use_cache and self.check_cache('as_tficf'):
+			return self.get_cache('as_tficf')
+
+		# compute the icf_scores
+		icf_scores = self.compute_icf_scores(use_cache)
+
+		# now get the raw word frequencies
+		as_frequencies_data = self.as_frequencies(use_cache)
+
+		print 'calculating tficf\'s...'
+
+		# for each item in the dataset, multiply word frequency by icf_score
+		return_data = []
+		for item in as_frequencies_data:
+
+			# unpack the item
+			idx, frequencies, class_name = item
+
+			# multiply word frequencies by their corresponding icf_scores
+			tficf_scores = {}
+			for word in frequencies:
+				tficf_scores[word] = frequencies[word] * icf_scores[word]
+
+			return_data.append([idx, tficf_scores, class_name])
+
+		# cache the results
+		self.cache('as_tficf', return_data)
+
+		return return_data
 
 
 	def as_frequencies(self, use_cache=True):
@@ -256,6 +331,8 @@ class Data(object):
 		if use_cache and self.check_cache('as_frequencies'):
 			return self.get_cache('as_frequencies')
 
+		print 'calculating frequencies...'
+
 		return_data = []
 		for row in self.data:
 
@@ -266,8 +343,9 @@ class Data(object):
 			# get rid of empty-string features
 			del features['']
 
+			idx = row[0]
 			class_name = row[2]
-			return_data.append((class_name, dict(features)))
+			return_data.append((idx, dict(features), class_name))
 
 		self.cache('as_frequencies', return_data)
 
