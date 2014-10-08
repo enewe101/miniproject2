@@ -377,18 +377,18 @@ class Data(object):
 
 		# generating tf-idf
 		for element in word_counts:
-			new_counts = {}
 			idx, feature_counts, class_name = element
 			n_words = sum(feature_counts.values())
-			for item in feature_counts:
-				tf = feature_counts[item]/n_words
-				df = global_counts[item]/n_documents
-				idf = - math.log(df)
 
+			new_counts = {}
+			for item in feature_counts:
+				tf = float(feature_counts[item])/float(n_words)
+				df = float(global_counts[item])/float(n_documents)
+				idf = - math.log(df)
 				new_counts[item] = tf*idf
 			return_data.append((idx,new_counts,class_name))
 
-		self.cache(return_data)
+		self.cache('tf_idf',return_data)
 		return return_data
 
 
