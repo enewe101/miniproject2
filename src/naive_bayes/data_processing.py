@@ -50,6 +50,7 @@ class Data(object):
 		'class_counts': 'data/cache/class_counts.json',
 		'cf_scores': 'data/cache/cf_scores.json',
 		'icf_scores': 'data/cache/icf_scores.json',
+		'tf_idf' : 'data/cache/tf_idf.json'
 	}
 
 	# Keep things in cache so we don't need to keep calculating
@@ -350,4 +351,47 @@ class Data(object):
 		self.cache('as_frequencies', return_data)
 
 		return return_data
+
+	def as_tfidf(self, use_cache=True):
+
+		# check for cached data first
+		if use_cache and self.check_cache('tf_idf'):
+			return self.get_cache('tf_idf')
+
+		# frequency of each word in each document
+		word_counts = self.as_frequencies()
+
+		# number of words
+		n_documents = len(word_counts)
+
+		# number of documents containing a word
+		global_counts = Counter()
+
+		return_data = []
+
+		# populating global_counts
+		for element in word_counts:
+			idx, feature_counts, class_name = element
+			global_counts.update(feature_counts.keys())
+
+		# generating tf-idf
+		for element in word_counts:
+			new_counts = {}
+			idx, feature_counts, class_name = element
+			n_words = sum(feature_counts.values())
+			for item in feature_counts:
+				tf = feature_counts[item]/n_words
+				df = global_counts[item]/n_documents
+				idf = - math.log(df)
+
+				new_counts[item] = tf*idf
+			return_data.append((idx,new_counts,class_name))
+
+		self.cache(return_data)
+		return return_data
+
+
+
+
+
 
