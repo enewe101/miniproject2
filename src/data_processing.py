@@ -17,13 +17,9 @@ from collections import defaultdict, Counter
 # Makes the merged data file for use by the Data class.  
 # This normally does not need to be called directly...
 def merge_input_output():
-	input_reader = csv.reader(open('data/raw/train_input.csv', 'r'))
-	output_reader = csv.reader(open('data/raw/train_output.csv', 'r'))
-	writer = csv.writer(open('data/raw/train.csv', 'w'))
-
-	# these files have headings as the first line, skip it!
-	input_reader.next()
-	output_reader.next()
+	input_reader = csv.reader(open('../data/raw/train_input.csv', 'r'))
+	output_reader = csv.reader(open('../data/raw/train_output.csv', 'r'))
+	writer = csv.writer(open('../data/raw/train_merged.csv', 'w'))
 
 	# write a new file that merges the info from both
 	for input_row, output_row in izip(input_reader, output_reader):
@@ -39,11 +35,13 @@ def add_caching(f):
 		use_cache=True,
 		lemmatize=False,
 		find_specials=False,
-		remove_stops=False
+		remove_stops=False,
+		data_part='train'
 	):
 
 		cache_address =  (
-			f_name, lemmatize, find_specials, remove_stops, self.limit)
+			data_part, f_name, lemmatize, find_specials, remove_stops, 
+			self.limit)
 
 		# check if results for this calculation were cached
 		if use_cache and self.check_cache(cache_address):
@@ -51,7 +49,7 @@ def add_caching(f):
 
 		# if not cached, calculate the result using the underlying function
 		return_data = f(
-			self, use_cache, lemmatize, find_specials, remove_stops)
+			self, use_cache, lemmatize, find_specials, remove_stops, data_part)
 
 		# add the result of the calculation to the cache
 		self.cache(cache_address, return_data)
@@ -69,9 +67,11 @@ def enable_vectors(f):
 		lemmatize=False,
 		find_specials=False,
 		remove_stops=False,
+		data_part='train',
 		as_vect=False,
 	):
-		result_data= f(self, use_cache, lemmatize, find_specials, remove_stops)
+		result_data= f(
+			self, use_cache, lemmatize, find_specials, remove_stops, data_part)
 
 		# if as_vect is not requested, just return the results normally
 		if not as_vect:
@@ -147,9 +147,9 @@ class Data(object):
 
 	# Other constants
 	NUM_CLASSES = 4
-	CACHE_DIR = 'data/cache'
-	RAW_DIR = 'data/raw'
-	RAW_MERGED = os.path.join(RAW_DIR, 'train.csv')
+	CACHE_DIR = '../data/cache'
+	RAW_DIR = '../data/raw'
+	RAW_MERGED = os.path.join(RAW_DIR, 'train_merged.csv')
 	RAW_INPUT = os.path.join(RAW_DIR, 'train_input.csv')
 	RAW_OUTPUT = os.path.join(RAW_DIR, 'train_output.csv')
 	RAW_TEST = os.path.join(RAW_DIR, 'test_input.csv')
@@ -167,14 +167,21 @@ class Data(object):
 			merge_input_output()
 
 		# load raw data into memory
-		reader = csv.reader(open(self.RAW_MERGED, 'r'))
+		reader_train = csv.reader(open(self.RAW_MERGED, 'r'))
+		reader_test = csv.reader(open(self.RAW_TEST, 'r'))
+
+		# the files have headers, so advance both readers by one line
+		reader_train.next()
+		reader_test.next()
 
 		# limit can be used to limit the amount of data used
 		if limit is not None:
-			self.data = [ tuple(reader.next()) for i in range(limit) ]
+			self.data = [tuple(reader_train.next()) for i in range(limit)]
+			self.test_data = [tuple(reader_test.next()) for i in range(limit)]
 
 		else:
-			self.data = [ tuple(row) for row in reader ] 
+			self.data = [tuple(row) for row in reader_train] 
+			self.test_data = [tuple(row) for row in reader_train] 
 
 
 	@enable_vectors
@@ -185,6 +192,7 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
+			data_part='train'
 		):
 
 		# compute the icf_scores
@@ -193,7 +201,7 @@ class Data(object):
 
 		# now get the raw word frequencies
 		as_frequencies_data = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, data_part)
 
 		self.say('calculating tficf\'s...')
 
@@ -202,14 +210,23 @@ class Data(object):
 		for item in as_frequencies_data:
 
 			# unpack the item
-			idx, frequencies, class_name = item
+			if data_part == 'train':
+				idx, frequencies, class_name = item
+			else:
+				idx, frequencies = item
+
 
 			# multiply word frequencies by their corresponding icf_scores
 			tficf_scores = {}
 			for word in frequencies:
-				tficf_scores[word] = frequencies[word] * icf_scores[word]
+				score = icf_scores[word] if word in icf_scores else 1.0
+				tficf_scores[word] = frequencies[word] * score
 
-			return_data.append([idx, tficf_scores, class_name])
+			if data_part == 'train':
+				return_data.append([idx, tficf_scores, class_name])
+			else:
+				return_data.append([idx, tficf_scores])
+
 
 		return return_data
 
@@ -222,19 +239,16 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			as_vect=False
+			data_part='train'
 		):
 		
-		# check for cached data first
-		if use_cache and self.check_cache('as_modified_tficf'):
-			return self.get_cache(
-				('as_modified_tficf', lemmatize, find_specials, remove_stops))
-
 		# compute the modified_icf_scores
-		modified_icf_scores = self.compute_modified_icf_scores(use_cache)
+		modified_icf_scores = self.compute_modified_icf_scores(
+			use_cache, lemmatize, find_specials, remove_stops)
 
 		# now get the raw word frequencies
-		as_frequencies_data = self.as_frequencies(use_cache)
+		as_frequencies_data = self.as_frequencies(
+			use_cache, lemmatize, find_specials, remove_stops, data_part)
 
 		self.say('calculating modified_tficf\'s...')
 
@@ -243,7 +257,10 @@ class Data(object):
 		for item in as_frequencies_data:
 
 			# unpack the item
-			idx, frequencies, class_name = item
+			if data_part == 'train':
+				idx, frequencies, class_name = item
+			else:
+				idx, frequencies = item
 
 			# multiply word frequencies by their corresponding 
 			# modified_icf_scores
@@ -252,16 +269,10 @@ class Data(object):
 				modified_tficf_scores[word] = (
 					frequencies[word] * modified_icf_scores[word])
 
-			return_data.append([idx, modified_tficf_scores, class_name])
-
-		# cache the results
-		self.cache(
-			('as_modified_tficf', lemmatize, find_specials, remove_stops), 
-			return_data
-		)
-
-		if as_vect:
-			return self.as_vect(return_data)
+			if data_part == 'train':
+				return_data.append([idx, modified_tficf_scores, class_name])
+			else:
+				return_data.append([idx, modified_tficf_scores])
 
 		return return_data
 
@@ -274,23 +285,32 @@ class Data(object):
 		lemmatize=False,
 		find_specials=False,
 		remove_stops=False,
-		as_vect=False
+		data_part='train'
 	):
-
-		'''
-		'''
 
 		self.say('calculating frequencies...')
 
+		# get some helper objects, if we plan to lemmatize or remove stop words
 		if lemmatize:
 			lmtzr = nltk.stem.wordnet.WordNetLemmatizer()
 		if remove_stops:
 			stops = set(nltk.corpus.stopwords.words('english'))
 
-		return_data = []
-		for row in self.data:
+		# use the test set or training set, depending on what was requested
+		if data_part == 'train':
+			data_set = self.data
+		elif data_part == 'test':
+			data_set = self.test_data
+		else:
+			raise ValueError("data_part must be either 'train' or 'test'")
 
-			idx, features, class_name = row
+		return_data = []
+		for row in data_set:
+
+			if data_part == 'train':
+				idx, features, class_name = row
+			else:
+				idx, features = row
 
 			# make everything lowercase
 			features = features.lower()
@@ -318,10 +338,10 @@ class Data(object):
 			# get rid of empty-string features
 			del features['']
 
-			return_data.append((idx, dict(features), class_name))
-
-		if as_vect:
-			return self.as_vect(return_data)
+			if data_part == 'train':
+				return_data.append((idx, dict(features), class_name))
+			else:
+				return_data.append((idx, dict(features)))
 
 		return return_data
 
@@ -334,17 +354,14 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			as_vect=False
+			data_part='train'
 		):
-
-		# check for cached data first
-		if use_cache and self.check_cache('tf_idf'):
-			return self.get_cache(
-				('tf_idf', lemmatize, find_specials, remove_stops))
 
 		# frequency of each word in each document
 		word_counts = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, data_part)
+
+		print type(word_counts)
 
 		# number of words
 		n_documents = len(word_counts)
@@ -356,12 +373,17 @@ class Data(object):
 
 		# populating global_counts
 		for element in word_counts:
-			idx, feature_counts, class_name = element
+			feature_counts = element[1]
 			global_counts.update(feature_counts.keys())
 
 		# generating tf-idf
 		for element in word_counts:
-			idx, feature_counts, class_name = element
+
+			if data_part == 'train':
+				idx, feature_counts, class_name = element
+			else:
+				idx, feature_counts = element
+
 			n_words = sum(feature_counts.values())
 
 			new_counts = {}
@@ -370,15 +392,11 @@ class Data(object):
 				df = float(global_counts[item])/float(n_documents)
 				idf = - math.log(df)
 				new_counts[item] = tf*idf
-			return_data.append((idx,new_counts,class_name))
 
-		self.cache(
-			('tf_idf', lemmatize, find_specials, remove_stops),
-			return_data
-		)
-
-		if as_vect:
-			return self.as_vect(return_data)
+			if data_part == 'train':
+				return_data.append((idx,new_counts,class_name))
+			else:
+				return_data.append((idx,new_counts))
 
 		return return_data
 
@@ -610,7 +628,9 @@ class Data(object):
 
 	def get_cache_fname(self, cache_address):
 
-		f_name, lemmatize, find_specials, remove_stops, limit = cache_address
+		data_part, func_name, lemmatize, find_specials, remove_stops, limit = cache_address
+		f_name = data_part
+		f_name += '_' + func_name
 		f_name += '_lem' if lemmatize else ''
 		f_name += '_spec' if find_specials else ''
 		f_name += '_nostop' if remove_stops else ''
