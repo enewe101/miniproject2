@@ -63,7 +63,7 @@ def add_caching(f):
 
 # Decorator that helps in building the Data class
 def enable_vectors(f):
-	def enable_vectors(
+	def augmented_with_vectors(
 		self, 
 		use_cache=True,
 		lemmatize=False,
@@ -90,7 +90,7 @@ def enable_vectors(f):
 		# now make the VectorList iterator, and return it
 		return VectorList(result_data, vocab)
 
-	return enable_vectors
+	return augmented_with_vectors
 
 
 # This class provides a data management API
@@ -423,7 +423,9 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			use_digrams=False
+			use_digrams=False,
+			data_part='train'	# this has no effect, but is needed 
+								# for compatibility with the caching aspect
 		):
 
 		self.say('calculating vocabulary...')
@@ -450,7 +452,9 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			use_digrams=False
+			use_digrams=False,
+			data_part='train'	# this has no effect, but is needed 
+								# for compatibility with the caching aspect
 		):
 
 		self.say('calculating class-counts...')
@@ -479,7 +483,9 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			use_digrams=False
+			use_digrams=False,
+			data_part='train'	# this has no effect, but is needed 
+								# for compatibility with the caching aspect
 		):
 		'''
 			This computes the class-frequency for words, that is, for each
@@ -522,7 +528,9 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
-			use_digrams=False
+			use_digrams=False,
+			data_part='train'	# this has no effect, but is needed 
+								# for compatibility with the caching aspect
 		):
 		'''
 			This computes the inverse class frequency score for all the words
@@ -549,7 +557,10 @@ class Data(object):
 			use_cache=True,
 			lemmatize=False,
 			find_specials=False,
-			remove_stops=False
+			remove_stops=False,
+			use_digrams=False,
+			data_part='train'	# this has no effect, but is needed 
+								# for compatibility with the caching aspect
 		):
 		'''
 			This computes a modified version of the inverse class frequency 
@@ -758,13 +769,23 @@ class VectorList(object):
 
 	def next(self):
 
-		idx, frequencies, class_name =  self.data[self.pointer]
 		self.pointer += 1
 
-		return [
-			frequencies[w] if w in frequencies else 0 
-			for w in self.word_list
-		]
+		if len(self.data[self.pointer])==3:
+			idx, frequencies, class_name =  self.data[self.pointer-1]
+			return (idx, [
+				frequencies[w] if w in frequencies else 0 
+				for w in self.word_list
+			], class_name)
+
+		else:
+			idx, frequencies =  self.data[self.pointer-1]
+			return (idx, [
+				frequencies[w] if w in frequencies else 0 
+				for w in self.word_list
+			])
+
+
 
 
 

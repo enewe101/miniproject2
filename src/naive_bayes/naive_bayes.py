@@ -4,6 +4,14 @@ import random
 import copy
 from collections import Counter, defaultdict
 
+# add this project's src folder to the path
+import sys
+import os
+sys.path.append(os.path.abspath('../'))
+
+import data_processing as dp
+
+
 def read_dataset(fname):
 	data = json.loads(open(fname, 'r').read())
 	data = [tuple(r) for r in data]
@@ -24,18 +32,38 @@ class CrossValCase(object):
 		'as_frequencies',
 		'as_tfidf'
 	]
+	K = 10
 
-	def __init__(
+	def __init__(self):
+		pass
+
+
+	def run(
 		self,
 		representation,
 		lemmatize,
 		find_specials,
 		remove_stops,
+		use_digrams,
 		limit=None
 	):
 
 		assert(representation in self.ALLOWED_REPRESENTATIONS)
-		data_manager = Data(limit=limit)
+		data_manager = dp.Data(limit=limit)
+
+		# this requests the data manager to calculate the representation
+		# specified by the parameters passed to the run method
+		data = getattr(data_manager, representation)(
+			lemmatize=lemmatize, 
+			find_specials=find_specials,
+			remove_stops=remove_stops,
+			use_digrams=use_digrams
+		)
+
+		cross_val_tester = CrossValTester(data)
+		accuracy = cros_val_tester.cross_validate(self.K)
+
+		return accuracy
 
 
 class CrossValTester(object):
