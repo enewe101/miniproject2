@@ -151,28 +151,31 @@ class Data(object):
 
 	# Other constants
 	NUM_CLASSES = 4
-	CACHE_DIR = '../data/cache'
-	RAW_DIR = '../data/raw'
+	CACHE_DIR = 'cache'
+	RAW_DIR = 'raw'
 	RAW_MERGED = os.path.join(RAW_DIR, 'train_merged.csv')
 	RAW_INPUT = os.path.join(RAW_DIR, 'train_input.csv')
 	RAW_OUTPUT = os.path.join(RAW_DIR, 'train_output.csv')
 	RAW_TEST = os.path.join(RAW_DIR, 'test_input.csv')
 
 
-	def __init__(self, limit=None, verbose=True):
+	def __init__(self, data_dir='../../data', limit=None, verbose=True):
 
+		self.data_dir = data_dir
 		self.verbose = verbose
 		self.limit = limit
 
 		# check if the merged data file exists, if not, make it
-		if not os.path.isfile(self.RAW_MERGED):
+		if not os.path.isfile(os.path.join(data_dir, self.RAW_MERGED)):
 			self.say('merging training input and output on the first '
 				'use of Data...')
 			merge_input_output()
 
 		# load raw data into memory
-		reader_train = csv.reader(open(self.RAW_MERGED, 'r'))
-		reader_test = csv.reader(open(self.RAW_TEST, 'r'))
+		reader_train = csv.reader(
+			open(os.path.join(data_dir, self.RAW_MERGED), 'r'))
+		reader_test = csv.reader(
+			open(os.path.join(data_dir, self.RAW_TEST), 'r'))
 
 		# the files have headers, so advance both readers by one line
 		reader_train.next()
@@ -667,7 +670,7 @@ class Data(object):
 		f_name += '_digrams' if use_digrams else ''
 		f_name += ('_%s' % str(self.limit)) if self.limit is not None else ''
 
-		return os.path.join(self.CACHE_DIR, '%s.json' % f_name)
+		return os.path.join(self.data_dir, self.CACHE_DIR, '%s.json' % f_name)
 
 
 	def cache(self, cache_address, data):
