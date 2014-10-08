@@ -15,30 +15,48 @@ class NaiveBayesException(Exception):
 class NaiveBayesCrossValidationException(Exception):
 	pass
 
+
+class CrossValCase(object):
+
+	ALLOWED_REPRESENTATIONS = [ 
+		'as_tficf',
+		'as_modified_tficf',
+		'as_frequencies',
+		'as_tfidf'
+	]
+
+	def __init__(
+		self,
+		representation,
+		lemmatize,
+		find_specials,
+		remove_stops,
+		limit=None
+	):
+
+		assert(representation in self.ALLOWED_REPRESENTATIONS)
+		data_manager = Data(limit=limit)
+
+
 class CrossValTester(object):
 	'''
 	Given a data set, allows one to perform cross validation on the 
 	NaiveBayesTextClassifier.
 
-	The dataset must be a dictionary of examples, where the keys are 
-	class names, and the values are lists of examples.  Each example should 
-	be a vector (tuple) of features (words), but the first entry should be 
-	the the name of the class to which the example belongs (true, that's a 
-	bit redundant.
+	The dataset must be a list of examples, where each example has the form
 
-	For the moment, the dataset should have an equal number of examples per
-	class.  It's an error to provide an imbalanced dataset for now.
+		(<id>, <feature_counts>, <class_name>)
 
-	E.g.:
-	dataset [=] {
-		'class1': [
-			('class1', 'feature1', 'feature2'),
-			('class1', 'feature1', 'feature3')
-		],
-		'class2: [
-			('class2', 'feature2', 'feature3'),
-			('class2', 'feature3', 'feature4')
-	}
+	id should be an integer, feature_counts should be a dictionary with 
+	numeric values, and class_name should be a string.
+
+	So the dataset should look something like this:
+
+		[
+			...
+			(1, {'feature1':3, 'feature2':1, ...}, 'physics'),
+			...
+		]
 	'''
 
 	def __init__(self, dataset, do_limit=False):
