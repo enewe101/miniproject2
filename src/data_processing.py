@@ -36,12 +36,13 @@ def add_caching(f):
 		lemmatize=False,
 		find_specials=False,
 		remove_stops=False,
+		use_digrams=False,
 		data_part='train'
 	):
 
 		cache_address =  (
 			data_part, f_name, lemmatize, find_specials, remove_stops, 
-			self.limit)
+			use_digrams, self.limit)
 
 		# check if results for this calculation were cached
 		if use_cache and self.check_cache(cache_address):
@@ -49,7 +50,8 @@ def add_caching(f):
 
 		# if not cached, calculate the result using the underlying function
 		return_data = f(
-			self, use_cache, lemmatize, find_specials, remove_stops, data_part)
+			self, use_cache, lemmatize, find_specials, remove_stops, 
+			use_digrams, data_part)
 
 		# add the result of the calculation to the cache
 		self.cache(cache_address, return_data)
@@ -67,11 +69,13 @@ def enable_vectors(f):
 		lemmatize=False,
 		find_specials=False,
 		remove_stops=False,
+		use_digrams=False,
 		data_part='train',
 		as_vect=False,
 	):
 		result_data= f(
-			self, use_cache, lemmatize, find_specials, remove_stops, data_part)
+			self, use_cache, lemmatize, find_specials, remove_stops, 
+			use_digrams, data_part)
 
 		# if as_vect is not requested, just return the results normally
 		if not as_vect:
@@ -81,7 +85,7 @@ def enable_vectors(f):
 
 		# first get the alphabetically ordered vocabulary
 		vocab = self.get_vocab(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# now make the VectorList iterator, and return it
 		return VectorList(result_data, vocab)
@@ -192,16 +196,18 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
+			use_digrams=False,
 			data_part='train'
 		):
 
 		# compute the icf_scores
 		icf_scores = self.compute_icf_scores(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# now get the raw word frequencies
 		as_frequencies_data = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops, data_part)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams, 
+			data_part)
 
 		self.say('calculating tficf\'s...')
 
@@ -239,16 +245,18 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
+			use_digrams=False,
 			data_part='train'
 		):
 		
 		# compute the modified_icf_scores
 		modified_icf_scores = self.compute_modified_icf_scores(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# now get the raw word frequencies
 		as_frequencies_data = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops, data_part)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams,
+			data_part)
 
 		self.say('calculating modified_tficf\'s...')
 
@@ -285,6 +293,7 @@ class Data(object):
 		lemmatize=False,
 		find_specials=False,
 		remove_stops=False,
+		use_digrams=False,
 		data_part='train'
 	):
 
@@ -332,6 +341,12 @@ class Data(object):
 			if lemmatize:
 				features = [lmtzr.lemmatize(f) for f in features]
 
+			# maybe get digrams
+			if use_digrams:
+				digrams = ['%s %s' % (features[i], features[i+1]) 
+					for i in range(len(features)-1)]
+				features += digrams
+
 			# convert into counts
 			features = Counter(features)
 
@@ -354,14 +369,14 @@ class Data(object):
 			lemmatize=False,
 			find_specials=False,
 			remove_stops=False,
+			use_digrams=False,
 			data_part='train'
 		):
 
 		# frequency of each word in each document
 		word_counts = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops, data_part)
-
-		print type(word_counts)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams,
+			data_part)
 
 		# number of words
 		n_documents = len(word_counts)
@@ -407,14 +422,15 @@ class Data(object):
 			use_cache=True,
 			lemmatize=False,
 			find_specials=False,
-			remove_stops=False
+			remove_stops=False,
+			use_digrams=False
 		):
 
 		self.say('calculating vocabulary...')
 
 		# first get the class counts: we can get the vocabulary from this
 		class_counts = self.get_class_counts(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# now assemble the vocabulary from the class_counts
 		vocab = set()
@@ -433,14 +449,15 @@ class Data(object):
 			use_cache=True,
 			lemmatize=False,
 			find_specials=False,
-			remove_stops=False
+			remove_stops=False,
+			use_digrams=False
 		):
 
 		self.say('calculating class-counts...')
 
 		class_counts = defaultdict(lambda: Counter())
 		as_frequencies_data = self.as_frequencies(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		for row in as_frequencies_data:
 			idx, frequencies, class_name = row
@@ -461,7 +478,8 @@ class Data(object):
 			use_cache=True,
 			lemmatize=False,
 			find_specials=False,
-			remove_stops=False
+			remove_stops=False,
+			use_digrams=False
 		):
 		'''
 			This computes the class-frequency for words, that is, for each
@@ -474,7 +492,7 @@ class Data(object):
 
 		# first, we must find the counts on a per-class basis
 		class_counts = self.get_class_counts(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# now we are ready to compute icf weighting factors
 		# first, assemble the entire vocabulary
@@ -503,7 +521,8 @@ class Data(object):
 			use_cache=True,
 			lemmatize=False,
 			find_specials=False,
-			remove_stops=False
+			remove_stops=False,
+			use_digrams=False
 		):
 		'''
 			This computes the inverse class frequency score for all the words
@@ -542,7 +561,7 @@ class Data(object):
 
 		# get cf_scores and convert to modified_icf_scores
 		class_counts = self.get_class_counts(
-			use_cache, lemmatize, find_specials, remove_stops)
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
 
 		# assemble the entire vocabulary
 		vocab = set()
@@ -628,12 +647,13 @@ class Data(object):
 
 	def get_cache_fname(self, cache_address):
 
-		data_part, func_name, lemmatize, find_specials, remove_stops, limit = cache_address
+		data_part, func_name, lemmatize, find_specials, remove_stops, use_digrams, limit = cache_address
 		f_name = data_part
 		f_name += '_' + func_name
 		f_name += '_lem' if lemmatize else ''
 		f_name += '_spec' if find_specials else ''
 		f_name += '_nostop' if remove_stops else ''
+		f_name += '_digrams' if use_digrams else ''
 		f_name += ('_%s' % str(self.limit)) if self.limit is not None else ''
 
 		return os.path.join(self.CACHE_DIR, '%s.json' % f_name)
