@@ -54,14 +54,17 @@ class CrossValCase(object):
 		# this requests the data manager to calculate the representation
 		# specified by the parameters passed to the run method
 		data = getattr(data_manager, representation)(
+			use_cache=True,
 			lemmatize=lemmatize, 
 			find_specials=find_specials,
 			remove_stops=remove_stops,
-			use_digrams=use_digrams
+			use_digrams=use_digrams,
+			data_part='train',
+			as_vect=False
 		)
 
 		cross_val_tester = CrossValTester(data)
-		accuracy = cros_val_tester.cross_validate(self.K)
+		accuracy = cross_val_tester.cross_validate(self.K)
 
 		return accuracy
 
