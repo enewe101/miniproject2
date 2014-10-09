@@ -141,8 +141,6 @@ class Data(object):
 	URL = re.compile(
 		r'\b(http://)?([a-zA-Z0-9_]+\.)+(com|edu|net|org|ca|us)\b')
 
-	# Keep things in cache so we don't need to keep calculating
-	CACHE = {}
 
 	# Some flags
 	NOT_CACHED = 0
@@ -165,6 +163,9 @@ class Data(object):
 		verbose=True,
 		use_mem_cache=False
 	):
+
+		# Keep things in cache so we don't need to keep calculating
+		CACHE = {}
 
 		self.data_dir = data_dir
 		self.verbose = verbose
@@ -655,7 +656,8 @@ class Data(object):
 				open(self.get_cache_fname(cache_address)).read())
 
 			# keep a reference in the memory cache
-			self.CACHE[cache_address] = return_data
+			if self.use_mem_cache:
+				self.CACHE[cache_address] = return_data
 
 			return return_data
 
