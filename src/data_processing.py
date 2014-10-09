@@ -467,6 +467,8 @@ class Data(object):
 								# for compatibility with the caching aspect
 		):
 
+		# calculate the number of documents in which each given word appears
+		# an a class by class basis
 		self.say('calculating class-counts...')
 
 		class_counts = defaultdict(lambda: Counter())
@@ -475,6 +477,10 @@ class Data(object):
 
 		for row in as_frequencies_data:
 			idx, frequencies, class_name = row
+
+			# we only count a word once per document, so eliminate duplicate
+			# words
+			frequencies = set(frequencies.keys())
 
 			# update word counts for the class from which this example came
 			class_counts[class_name].update(frequencies)
@@ -591,12 +597,17 @@ class Data(object):
 
 		modified_icf_scores = {}
 		for word in vocab:
-			word_counts = [
+			num_docs = sorted([	
 				class_counts[cn][word] if word in class_counts[cn] else 0
 				for cn in class_counts
-			]
+			], reverse=True)
 			modified_icf_scores[word] = np.log2(
-				(max(word_counts) + 1) / float(min(word_counts) + 1)
+				1 + self.NUM_CLASSES * (
+					num_docs[0] - num_docs[1] 
+					+ (1/2.0)*(num_docs[1] - num_docs[2])
+					+ (1/3.0)*(num_docs[2] - num_docs[3])
+					+ (1/4.0)*(num_docs[3])
+				)
 			)
 
 		return modified_icf_scores

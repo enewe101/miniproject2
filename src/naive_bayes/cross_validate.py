@@ -3,7 +3,7 @@ from naive_bayes import CrossValCase
 from sim_sweep import sim_sweep
 
 SCHEDULE = {
-	'representation': ['as_frequencies', 'as_tfidf', 'as_tficf'],
+	'representation': ['as_modified_tficf'], #'as_frequencies', 'as_tfidf', 'as_tficf'],
 	'lemmatize': [False],
 	'find_specials': [False],
 	'remove_stops': [False],
@@ -11,7 +11,7 @@ SCHEDULE = {
 	#'limit': [1000]
 }
 
-FNAME = 'test.json'
+FNAME = 'mod_tficf.json'
 
 def do_cross_validation_test_suite(num_procs=None):
 	if num_procs is not None:
