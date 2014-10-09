@@ -4,10 +4,10 @@ from sim_sweep import sim_sweep
 
 SCHEDULE = {
 	'representation': ['as_frequencies', 'as_tfidf', 'as_tficf'],
-	#'lemmatize': [True, False],
-	#'find_specials': [True, False],
-	#'remove_stops': [True, False],
-	#'use_digrams': [True, False],
+	'lemmatize': [False],
+	'find_specials': [False],
+	'remove_stops': [False],
+	'use_digrams': [False],
 	#'limit': [1000]
 }
 

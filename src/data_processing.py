@@ -165,7 +165,7 @@ class Data(object):
 	):
 
 		# Keep things in cache so we don't need to keep calculating
-		CACHE = {}
+		self.CACHE = {}
 
 		self.data_dir = data_dir
 		self.verbose = verbose
