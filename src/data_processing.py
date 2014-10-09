@@ -159,11 +159,17 @@ class Data(object):
 	RAW_TEST = os.path.join(RAW_DIR, 'test_input.csv')
 
 
-	def __init__(self, data_dir='../../data', limit=None, verbose=True):
+	def __init__(self, 
+		data_dir='../../data',
+		limit=None,
+		verbose=True,
+		use_mem_cache=False
+	):
 
 		self.data_dir = data_dir
 		self.verbose = verbose
 		self.limit = limit
+		self.use_mem_cache
 
 		# check if the merged data file exists, if not, make it
 		if not os.path.isfile(os.path.join(data_dir, self.RAW_MERGED)):
@@ -677,7 +683,8 @@ class Data(object):
 		write_fname = self.get_cache_fname(cache_address)
 		fh = open(write_fname, 'w')
 		fh.write(json.dumps(data, indent=2))
-		self.CACHE[cache_address] = data
+		if self.use_mem_cache:
+			self.CACHE[cache_address] = data
 		fh.close()
 
 

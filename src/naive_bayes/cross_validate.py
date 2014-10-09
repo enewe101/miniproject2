@@ -4,11 +4,11 @@ from sim_sweep import sim_sweep
 
 SCHEDULE = {
 	'representation': ['as_frequencies', 'as_tfidf', 'as_tficf'],
-	'lemmatize': [True, False],
-	'find_specials': [True, False],
-	'remove_stops': [True, False],
-	'use_digrams': [True, False],
-	#'limit': [10]
+	#'lemmatize': [True, False],
+	#'find_specials': [True, False],
+	#'remove_stops': [True, False],
+	#'use_digrams': [True, False],
+	#'limit': [1000]
 }
 
 FNAME = 'test.json'
