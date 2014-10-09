@@ -170,7 +170,7 @@ class Data(object):
 		self.data_dir = data_dir
 		self.verbose = verbose
 		self.limit = limit
-		self.use_mem_cache
+		self.use_mem_cache = use_mem_cache
 
 		# check if the merged data file exists, if not, make it
 		if not os.path.isfile(os.path.join(data_dir, self.RAW_MERGED)):
