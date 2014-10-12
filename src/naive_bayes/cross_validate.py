@@ -11,7 +11,7 @@ SCHEDULE = {
 	#'limit': [1000]
 }
 
-FNAME = 'mod_tficf.json'
+FNAME = 'tf.json'
 
 def do_cross_validation_test_suite(num_procs=None):
 	if num_procs is not None:
