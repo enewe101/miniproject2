@@ -144,6 +144,17 @@ class CrossValTester(object):
 			self.classifier.add_example(example)
 
 
+	def generate_crossval_predictions(self, k=None):
+
+		# perform cross validation.  The predictions made during this routine
+		# get stored in self.predictions
+		self.cross_validate(k)
+
+		# return predictions (sorted by id)
+	 	self.predictions.sort()
+		return self.predictions
+
+
 	def cross_validate(self, k=None):
 		'''
 		divide the data set set into k equal folds (if k doesn't divide the
@@ -178,6 +189,7 @@ class CrossValTester(object):
 		# then selectively remove the examples on which we wish to test.
 		# Testing shows that there is no pollution from doing this.
 		self.score = 0
+		self.predictions = []
 
 		for fold in range(k):
 
@@ -188,9 +200,9 @@ class CrossValTester(object):
 
 			for example in test_set:
 
-				example_class = example[2]
-				example_features = example[1]
+				example_id, example_features, example_class = example
 				prediction = self.classifier.classify(example_features)
+				self.predictions.append((example_id, prediction))
 
 				if prediction == example_class:
 					self.score += 1

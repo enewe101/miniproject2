@@ -3,7 +3,7 @@ from naive_bayes import CrossValCase
 from sim_sweep import sim_sweep
 
 SCHEDULE = {
-	'representation': ['as_modified_tficf'], #'as_frequencies', 'as_tfidf', 'as_tficf'],
+	'representation': ['as_modified_tficf'], 
 	'lemmatize': [False],
 	'find_specials': [False],
 	'remove_stops': [False],

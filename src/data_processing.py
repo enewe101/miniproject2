@@ -195,7 +195,7 @@ class Data(object):
 
 		else:
 			self.data = [tuple(row) for row in reader_train] 
-			self.test_data = [tuple(row) for row in reader_train] 
+			self.test_data = [tuple(row) for row in reader_test] 
 
 
 	@enable_vectors
@@ -607,7 +607,7 @@ class Data(object):
 					+ (1/2.0)*(num_docs[1] - num_docs[2])
 					+ (1/3.0)*(num_docs[2] - num_docs[3])
 					+ (1/4.0)*(num_docs[3])
-				)
+				) / float(num_docs[0])
 			)
 
 		return modified_icf_scores
