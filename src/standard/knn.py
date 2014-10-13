@@ -427,13 +427,13 @@ class CrossValCase(object):
 		find_specials,
 		remove_stops,
 		use_digrams,
-		dist=,
+		dist='EUCLID_DIST',
 		limit=None
 	):
 		'''
 		Generate dataset and apply cross-validation.
 		'''
-		
+
 		assert(representation in self.ALLOWED_REPRESENTATIONS)
 		data_manager = dp.Data(limit=limit)
 
@@ -456,7 +456,7 @@ class CrossValCase(object):
 
 
 if __name__ == '__main__':
-	print CrossValCase().run(
+	CrossValCase().run(
 		dist='COSINE_DIST',
 		representation='as_trimmed_tficf',
 		lemmatize=True,
