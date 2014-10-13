@@ -43,11 +43,65 @@ List key index terms here. No more than 5.
 \end{keywords}
 
 \section{Introduction}
+The quantity of data available contitinues to grow, as does it's rate of 
+production, with no sign of letting up.  Most of the worlds information is
+in text form, which is both easily read by humans and, when used to relay
+an idea, is often more compact than other methods, such as images and 
+sound.
+
+Text classification has its origins in information retrieval (IR), as do 
+many of the methods we use here.  IR differs from text classification in the
+kind of problem it is trying to solve.  In IR, documents are not seen as 
+belonging to classes.  Instead, the task is to determine, for a given 
+query, which are the most relevant documents.  Because the query is not
+fixed, one connot think of documents as belonging to a relevant and 
+irrelevant set (at least until some query is given), so any pre-processing
+or representation methods that attempt to improve the retrieval of relevant 
+documents must be carried out in an unsupervised fashion.
+
+In the early 2000's, two methods emerged as front-runners in text 
+classification task.  These methods were not mutually exclusive, one being
+an approach to representation, that of LDA, and the other being an approach
+to classifier learning, SVM.  SVM was found to be 
+highly performant, beating k-Nearest Neighbour and multinomial Naive Bayes
+algorithms.  In optimizing representation fed into SVM, it was found that
+applying a relevancy weighting to word counts improved the performance of
+the resulting classifier substancially---generally having a more important
+effect than the choice of kernal or tunable parameters.  Two representations
+emereged that improved SVM accuracy.  One was TFIDF, which was borowed 
+directly from IR, and another was TFICF, which is based on a similar notion
+to TFIDF, but takes into account the example classes.  These respectively 
+improved SVM.  But the application of SVM to LDA creates in many cases,
+an even more performant approach to induction.  Both methods are space
+efficient, and once the LDA features are extracted, SVM is time-efficient
+during learning.
+learning 
+
+Here we review a broad set of representations and classifiers in a text
+classification task.  We use a set of abstracts for 
 \section{Related work}
 - stuff about information retrieval
 - stuff about text classification in general
 - stuff about abstract classification specifically
 - stuff about the progress in algorithms
+
+
+The LDA feature representation was introduced in 2003, building on the
+ideas of LSI.  The purpose of the LDA representation is to identify a 
+much lower dimentional subspace of the word-frequency feature space that still 
+contains most of the variation between documents.  This lower-dimensional
+manifold has `topics' as its basis vertors, where each topic represents a 
+probability distribution over words.  Documents are seen as being made of
+mixtures of topics, and each word is seen as having arisen as the random
+draw from one of the topic word distributions.
+
+Not only does the reduction in dimentsionality make subsequent inference
+algorithms more efficient, it actually improves the results in many cases.
+In much the same way that TFIDF identifies which words are relevant to the
+classification task, LDA forces the classifier to focus a small subset of
+features which, because they are capable of expressing a large amount of the 
+variation, are likely to be relevant for classification.
+
 
 \section{Data pre-processing methods}
 The raw form of the data consisted of the full text of abstracts and the
@@ -270,6 +324,9 @@ the gains in accuracy were not great.  We could not proceed past 256 features
 because the training time was excessive.
 
 \paragraph{Optimization of SVM parameters}
+TODO
+
+
 
 
 We also optimized certain basic parameters in the specific choices within the classifiers.  Some of these 
