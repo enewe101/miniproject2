@@ -1,0 +1,1 @@
+{"multinomial_naive_bayes": 0.63668114881811122, "linear_svc": 0.84807666494457101, "decision_tree": 0.78413523334631985, "logistic_regression": 0.84809746360671601, "naive_bayes": 0.84557180128318277, "random_forest": 0.84462604547736464}
