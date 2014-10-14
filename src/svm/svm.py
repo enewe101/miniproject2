@@ -2,6 +2,7 @@ from sklearn import svm
 from sklearn.cross_validation import KFold
 import numpy as np
 import random
+import csv
 
 # Add this project's src folder to the path
 import sys
@@ -89,7 +90,7 @@ class SVMRunner (object):
 		predicted class according to the SVM classifier.
 		'''
 
-		return self.classifier.predict(self.example_to_vector(example))
+		return self.classifier.predict(self.example_to_vector(example))[0]
 
 
 	def test (self, examples):
@@ -100,6 +101,20 @@ class SVMRunner (object):
 		'''
 		(X, y) = self.get_X_and_y(examples)
 		return self.classifier.score(X, y)
+
+
+	def pred (self, examples):
+		'''
+		Predicts on a list of examples.
+		'''
+
+		preds = []
+
+		for example in examples:
+			e_Id = example[0]
+			preds.append([e_Id, self.classify(example)])
+		
+		return preds
 
 
 class CrossValTester(object):
@@ -139,7 +154,7 @@ class CrossValTester(object):
 		self.size = len(self.dataset)
 
 
-	def cross_validate(self, k=None):
+	def cross_validate (self, k=None):
 		'''
 		Divide the dataset set into k equal folds (If k doesn't divide the
 		number of examples evenly, then the folds won't all be equal). For
@@ -157,8 +172,11 @@ class CrossValTester(object):
 
 		accuracy = 0.0
 
+		fold = 1
 		kf = KFold(self.size, n_folds=k, indices=False)
 		for train_indices, test_indices in kf:
+		    print 'Fold %i' % fold
+
 		    train_set = (np.array(self.dataset))[train_indices]
 		    test_set = (np.array(self.dataset))[test_indices]
 
@@ -167,9 +185,58 @@ class CrossValTester(object):
 
 		    accuracy += classifier.test(test_set.tolist()) / k
 
+		    fold += 1
+
 		print 'OVERALL ACCURACY: %f' % accuracy
 
 		# Return the overall accuracy 
+		return accuracy
+
+
+	def cross_validate_to_file (self, csv_filepath, k=None):
+		'''
+		Same as cross_validate except predictions on the folds are output
+		to a .csv file.
+		'''
+
+		# If k is not specified, do leave-one-out cross validation
+		if k is None:
+			k = self.size
+		k = int(k)
+
+		preds = []
+
+		accuracy = 0.0
+
+		fold = 1
+		kf = KFold(self.size, n_folds=k, indices=False)
+		for train_indices, test_indices in kf:
+		    print 'Fold %i' % fold
+
+		    train_set = (np.array(self.dataset))[train_indices]
+		    test_set = (np.array(self.dataset))[test_indices]
+
+		    classifier = SVMRunner(representation=self.representation)
+		    classifier.train(train_set.tolist())
+
+		    preds += classifier.pred(test_set.tolist())
+		    accuracy += classifier.test(test_set.tolist()) / k
+
+		    fold += 1
+
+		with open(csv_filepath, 'wb') as csv_file:
+			writer = csv.writer(
+				csv_file,
+				delimiter=',',
+				quotechar='"',
+				quoting=csv.QUOTE_ALL
+			)
+
+			writer.writerow(['id', 'category'])
+
+			for pred in preds:
+				writer.writerow(pred)
+
 		return accuracy
 
 
@@ -234,13 +301,130 @@ class CrossValCase(object):
 		return accuracy
 
 
+class GenPredictionsCase (object):
+	'''
+	Runner for training on a train set and testing on a test set.
+	'''
+
+
+	# Permissable representations of the dataset.
+	ALLOWED_REPRESENTATIONS = [ 
+		'as_tficf',
+		'as_modified_tficf',
+		'as_trimmed_tficf',
+		'as_frequencies',
+		'as_tfidf'
+	]
+
+	# Number of folds in cross-validation
+	K = 10
+
+
+	def __init__(self):
+		pass
+
+
+	def run(
+		self,
+		representation,
+		lemmatize,
+		find_specials,
+		remove_stops,
+		use_digrams,
+		classifier_rep,
+		limit=None
+	):
+		'''
+		
+		'''
+		
+		assert(representation in self.ALLOWED_REPRESENTATIONS)
+		data_manager = dp.Data(limit=limit)
+
+		# This requests the data manager to calculate the representation
+		# specified by the parameters passed to the run method
+		train_set = getattr(data_manager, representation)(
+			use_cache=True,
+			lemmatize=lemmatize, 
+			find_specials=find_specials,
+			remove_stops=remove_stops,
+			use_digrams=use_digrams,
+			data_part='train',
+			as_vect=False
+		)
+
+		print 'CROSS VALIDATION'
+
+		cross_val_tester = CrossValTester(
+			dataset=train_set,
+			representation=classifier_rep
+		)
+		
+		train_csv_filepath = classifier_rep + '_' + representation + '_train_preds.csv'
+		accuracy = cross_val_tester.cross_validate_to_file(
+			k=self.K,
+			csv_filepath=train_csv_filepath
+		)
+
+		print 'OVERALL ACCURACY:', accuracy
+
+		print 'TRAIN'
+
+		classifier = SVMRunner(representation=classifier_rep)
+		classifier.train(train_set)
+
+		print 'PREDICT'
+
+		data_manager = dp.Data(limit=None)
+		test_set = getattr(data_manager, representation)(
+			use_cache=True,
+			lemmatize=lemmatize, 
+			find_specials=find_specials,
+			remove_stops=remove_stops,
+			use_digrams=use_digrams,
+			data_part='test',
+			as_vect=False
+		)
+		
+		print 'Getting predictions on test set...'
+		test_preds = classifier.pred(test_set)
+
+		print 'Writing predictions to file...'
+		test_csv_filepath = classifier_rep + '_' + representation + '_test_preds.csv'
+		with open(test_csv_filepath, 'wb') as csv_file:
+			writer = csv.writer(
+				csv_file,
+				delimiter=',',
+				quotechar='"',
+				quoting=csv.QUOTE_ALL
+			)
+
+			writer.writerow(['id', 'category'])
+
+			for pred in test_preds:
+				writer.writerow(pred)
+
+		# To make it compatible with sim_sweep
+		return accuracy
+
+
 if __name__ == '__main__':
-	CrossValCase().run(
-		representation='as_tficf',
+	GenPredictionsCase().run(
+		representation='as_tfidf',
 		lemmatize=True,
 		find_specials=True,
 		remove_stops=True,
 		use_digrams=False,
-		limit=1000,
-		classifier_rep='SVC'
+		limit=100,
+		classifier_rep='LinearSVC'
 	)
+
+	# CrossValCase().run(
+	# 	representation='as_tfidf',
+	# 	lemmatize=True,
+	# 	find_specials=True,
+	# 	remove_stops=True,
+	# 	use_digrams=False,
+	# 	limit=3000,
+	# 	classifier_rep='LinearSVC'
+	# )
