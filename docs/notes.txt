@@ -1,0 +1,14 @@
+Figures
+
+- Naive Bayes
+	create a cool plot that shows the order of improvement as a bar chart
+	along with which methods are used as a tick row
+
+- LDA
+	Plot of induction methods as the number of features is increased
+
+- Nearest Neighbour
+	Quote performance
+		- with euclidean
+		- with cosine
+		- as a function of amount of dataset considered

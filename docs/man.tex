@@ -4,7 +4,7 @@
 \overrideIEEEmargins
 
 \usepackage{cite} 
-\usepackage[dvips]{graphicx}  
+\usepackage{graphicx}  
 \usepackage{amsmath}   
 \usepackage{multirow}
 \usepackage[left=0.71in,top=0.94in,right=0.71in,bottom=1.18in]{geometry}
@@ -309,7 +309,34 @@ the representation and inductive methods.  In some cases we were able to try
 all the representations with a given classifier, such as with Naive Bayes for 
 example.
 
-\paragraph{Optimization of number of features in LDA}
+\paragraph{NB: optimizing preprocessing}
+\begin{figure*}
+	\centering
+	\includegraphics[scale=0.45]{figs/NB_representations.pdf}
+	\caption{Caption\dots}
+	\label{fig:NB_representations}
+\end{figure*}
+
+
+\paragraph{kNN: optimizing number of neighbours}
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.7]{figs/k_opt.pdf}
+	\caption{Caption\dots}
+	\label{fig:k_opt}
+\end{figure}
+
+
+\paragraph{LDA: optimizing number of features}
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.7]{figs/LDA_num_features.pdf}
+	\caption{Caption\dots}
+	\label{fig:LDA_num_features}
+\end{figure}
+
 LDA is an unsupervised algorithm, however it is necessary to specify the 
 number of features, or topics, that the algorithm should find.  The topics
 should not be confused with classes.  Rather, one expects the documents of 
