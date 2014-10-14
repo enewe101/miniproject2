@@ -405,7 +405,8 @@ class GenPredictionsCase (object):
 				writer.writerow(pred)
 
 		# To make it compatible with sim_sweep
-		return accuracy
+		return 0.0
+		# return accuracy
 
 
 if __name__ == '__main__':
