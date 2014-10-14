@@ -66,16 +66,16 @@ to classifier learning, SVM.  SVM was found to be
 highly performant, beating k-Nearest Neighbour and multinomial Naive Bayes
 algorithms.  In optimizing representation fed into SVM, it was found that
 applying a relevancy weighting to word counts improved the performance of
-the resulting classifier substancially---generally having a more important
-effect than the choice of kernal or tunable parameters.  Two representations
-emereged that improved SVM accuracy.  One was TFIDF, which was borowed 
+the resulting classifier substantially---generally having a more important
+effect than the choice of kernel or tunable parameters.  Two representations
+emerged that improved SVM accuracy.  One was TFIDF, which was borowed 
 directly from IR, and another was TFICF, which is based on a similar notion
 to TFIDF, but takes into account the example classes.  These respectively 
 improved SVM.  But the application of SVM to LDA creates in many cases,
 an even more performant approach to induction.  Both methods are space
 efficient, and once the LDA features are extracted, SVM is time-efficient
 during learning.
-learning 
+
 
 Here we review a broad set of representations and classifiers in a text
 classification task.  We use a set of abstracts for 
@@ -88,14 +88,14 @@ classification task.  We use a set of abstracts for
 
 The LDA feature representation was introduced in 2003, building on the
 ideas of LSI.  The purpose of the LDA representation is to identify a 
-much lower dimentional subspace of the word-frequency feature space that still 
+much lower dimensional subspace of the word-frequency feature space that still 
 contains most of the variation between documents.  This lower-dimensional
-manifold has `topics' as its basis vertors, where each topic represents a 
+manifold has `topics' as its basis vectors, where each topic represents a 
 probability distribution over words.  Documents are seen as being made of
 mixtures of topics, and each word is seen as having arisen as the random
 draw from one of the topic word distributions.
 
-Not only does the reduction in dimentsionality make subsequent inference
+Not only does the reduction in dimensionality make subsequent inference
 algorithms more efficient, it actually improves the results in many cases.
 In much the same way that TFIDF identifies which words are relevant to the
 classification task, LDA forces the classifier to focus a small subset of
@@ -108,7 +108,7 @@ The raw form of the data consisted of the full text of abstracts and the
 class of the abstract, which was either `cs', `stat', `math', or `physics'.
 The dataset contained some problematic entries.  For example, sometimes we
 found that the abstract was actually only a statement that the paper had been
-removed.  In other cases, we found what appeared to column headings (e.g.
+removed.  In other cases, we found what appeared to be column headings (e.g.
 ``abstract'' and ``class'') within data rows.  We removed all of these entries
 manually.
 
@@ -116,7 +116,7 @@ Before extracting features from the text, we did various things to improve
 results.  First, all the text was lowercased, and all punctuation was 
 removed.  However, this step would tend to alter latex commands, numbers,
 and urls.  We felt that the mere occurrence of these types of elements would
-be potentially descriminitive, so we included an optional pre-processing step
+be potentially discriminitive, so we included an optional pre-processing step
 that matched such types using regular expressions, and replaced them 
 respectively with the tokens `aNUMBER', `aLATEX', `aURL', so that counts of
 these types could be extracted later.  We will refer to these types as 
@@ -125,7 +125,7 @@ these types could be extracted later.  We will refer to these types as
 Coding of the ``specials'' constitutes a dimensionality reduction.  We also
 performed other dimensionality reductions, including the removal of 
 stop words and lemmatization.  To do both of these, we used the
-wordnet corpus of the nltk package.
+\textit{wordnet} corpus of the \textit{nltk} package.
 
  
 \section{Feature design and selection}
@@ -136,7 +136,7 @@ point, encoding this as a feature vector can take up a very large amount of
 space, because it would involve indicating a `0' for all words that 
 \textit{did not occur} in a given abstract.  In general, for all our 
 representations, we used an key-based encoding, such that the type (word)
-is used as a key, and the associated value, while tokens whose value is 
+is used as a key with the associated value, while tokens whose value is 
 zero are simply omited.  Another very similar feature set we used involved 
 indicating the actual counts used.
 
@@ -152,7 +152,7 @@ by applying a multiplicative factor.
 The first, TFIDF (term frequency inverse document frequency) is based 
 on a relevance metric from information retrieval.  It provides a greater 
 weight to those words which occur in 
-few documents, based on the notion that these words are more descriminative.
+few documents, based on the notion that these words are more discriminative.
 TFIDF weights were calculated using the following formula:
 
 \begin{align}
@@ -173,7 +173,7 @@ document $d_j$, which is denoted $\textsc{tfidf}(t_i, d_j)$, is calculated
 as follows:
 \begin{align}
 	\textsc{tfidf}(t_i, d_j) = \textsc{tf}(t_i, d_j) \cdot \textsc{icf}(t_i) \\
-	= \textsc{icf}(t_i, d_j) \cdot \lg \left(1 + \frac{C}{cf(t_i)}\right),
+	= \textsc{tf}(t_i, d_j) \cdot \lg \left(1 + \frac{C}{cf(t_i)}\right),
 \end{align}
 where $\textsc{tf}(t_i, d_j)$ is the frequency of term $t_i$ in document $d_j$,
 $\textsc{icf}(t_i)$ is the inverse \textit{class} frequency, $C$ is the 
@@ -184,7 +184,7 @@ least one document with an occurence of $t_i$.
 Continuing the reasoning by which TFICF was developed, one might go further.
 Suppose one has a token which is very frequent in one class, but which still
 occurs only a few times in each of the other classes.  One would expect this
-to be almost as descriminative as a feature which occured frequently in one
+to be almost as discriminative as a feature which occured frequently in one
 class but not at all in another.  Based on this reasoning, we developped
 \textit{modified TFICF}, using the following formula:
 \begin{align}
@@ -241,7 +241,7 @@ combinations of pre-treatment and feature representation, including LDA.
 For the LDA representation, we also used an implementation of Naive Bayes 
 which assumes that word frequencies have a Gaussian distribution.  Again
 this distribution embeds an impossible assumption that words can occur a 
-fractional number of times, but there is in fact no barrier to using the 
+fractional number of times, but there is in fact no barrier to using 
 such an implementation in practice.
 
 \paragraph{Standard algorithm}
@@ -253,8 +253,8 @@ likely to be from the same class.  An important optimization in this
 algorithm is the selection of a distance metric.  While the euclidean distance
 metric is the most intuitive, it is not necessarily the most suitable for
 a given domain.  In text classification, prior results have shown that 
-cosine similarity (a pseudo-distance metric because it does not obeay the
-triangel inequality) is a better choice.  We investigated both techniques.
+cosine distance (a pseudo-distance metric because it does not obey the
+triangle inequality) is a better choice.  We investigated both techniques.
 
 Unlike the Naive Bayes classifier, kNN becomes computationally very intensive
 as one increases the number of examples.  This is because, for each query
@@ -267,14 +267,14 @@ exist known data structures that reduce the number of distance calculations and
 comparisons that need to be made within the kNN algorithm, however, based on
 our early results from this algorithm, which were not very promising, we 
 decided to spend more time optimizing the most performant algorithms rather
-than pursuing an computationally efficient kNN algorithm.
+than pursuing a computationally efficient kNN algorithm.
 
 
 \paragraph{Advanced algorithms}
 We chose to investigate several advanced algorithms, given the existance of
 high quality and easy-to-use packages available for text classification.
-We used the mallet Java package to produce the LDA feature representation, 
-and then used a variety of classifiers based on the LDA features.
+We used the mallet Java package suite to produce the LDA feature representation, 
+and then applied a variety of classifiers based on the LDA features.
 
 Using the LDA representation, we performed the multinomial Naive 
 Bayes, Gaussian Naive Bayes, logistic regression, random forest, decision tree,
@@ -288,23 +288,23 @@ the most efficient representation, having also considered X,Y, and Z.  and
 weighted feature representations.  For variety, we chose Scikit-learn's 
 implementation, rather than re-using Mallet's (which we used on LDA topics).
 
-The major reason for focussing on testing a variety of classifiers is that
-we will combine the various configurations of classifiers using an ensemble
-classifier.  We will do this by producing predictions from all of the 
+The major reason for focusing on testing a variety of classifiers is that
+we will combine the various configurations of classifiers using a meta-classifier.
+We will do this by producing predictions from all of the 
 classifiers individually, and treat these as features.  Since each 
-feature learns a different `concept' for the classes, there biases will
+feature learns a different `concept' for the classes, their biases will
 tend to be different.  On top of these features we use a decision tree.
 The decision tree will rely on the output of different classifiers, based 
 on their track-records during cross-validation.
 
 To build the training set for the decision tree-based ensemble classifier,
 we record the predictions that each classifier makes during cross-validation.
-Thus, we get predictions by thos classifiers for all of the training data,
-but the prediction always made about an example that the classifier has 
-not seen.  After cross validation, we trained a each classifier on the
-entire training set, using the optimal settings, and then classified the test
-data.  This produces our base-classifier feature set.  We then  
-trained the decision tree using the entire set of predictions.
+This way, we get predictions for each training example with the example
+unseen by the classifier during training. After cross validation, we trained
+each classifier on the entire training set, using the optimal settings, and
+then classified the test data.  This produces our base-classifier feature set.
+We then trained the decision tree using the entire set of predictions on
+generated on the training set.
 
 At this point the reader may have expected us to cross-validate the 
 ensemble classifier.  Theoretically we could do this, but the computational
@@ -356,7 +356,7 @@ The \textsc{tfidf} representation was, in general, less affected by the
 pre-processing options, which can be seen (in fig X) because all the
 \textsc{tfidf} approaches are clustered together within an upper middle 
 range of ranks.  So, \textsc{tfidf} seems to make the classifier more robust
-against making the wrong choices.  However when the optimal pre-procesning 
+against making the wrong choices.  However when the optimal pre-processing 
 choices are made for each basic representation, \textsc{tfidf} performs
 the worst.  Interestingly, lemmatization and finding special tokens helped
 \textsc{tfidf}, unlike for all of the other representations.  
@@ -383,19 +383,19 @@ over-emphasizes the basis for descrimination that is already used.
 
 \paragraph*{kNN distance metric}
 We next describe optimizations for the kNN algoritm.  One of the most important
-choices to be made in implementing a nearest-neighbour approach is to decide
-on to measure distance.  The Euclidean distance is in many ways
+choices for implementing a nearest-neighbour approach is in deciding
+on the distance metric.  The Euclidean distance is in many ways
 the most intuitive, however, it is difficult to justify why it would be
 meaningful in the case of text classification.  One reason to doubt its 
 usefulness is that, for very high dimensional spaces (such as we have), 
 the euclidean distance suffers from ``sphere hardening'', in which all points
 begin to seem far from one another.
 
-Cosine similarity provides an alternative with a good track-record as a 
-similarity measure for text documents.  Technically cosine similarity is not
+Cosine distance provides an alternative with a good track-record as a 
+similarity measure for text documents.  Technically cosine distance is not
 a true distance metric, because it does not satisfy the triangle inequality,
-but this leads to no technical problems in using it in the kNN algorithm.
-Intuitively, because cosine similarity looks only at the angle between 
+but this leads to no technical problems in using it for the kNN algorithm.
+Intuitively, because cosine distance considers only the angle between 
 the feature representations of documents, it is not affected by sphere 
 hardening.  
 
@@ -422,7 +422,7 @@ scores, which we explain next.
 \paragraph*{kNN feature reduction}
 The kNN algorithm tends to be more susceptible to irrelevant
 features than the NB and LDA algorithms, which limit the impact of 
-non-descriminative features.
+non-discriminative features.
 This susceptibility comes from the fact that kNN necessarily attributes equal 
 importance to all features, up to scaling of the feature axes 
 (and assuming isotropic distance metrics are used).  Thus, eliminating the
@@ -498,7 +498,7 @@ should not be confused with classes.  Rather, one expects the documents of
 each class to be comprised of a mixture of topics.  The topics themselves 
 constitute basis vectors for a reduced subspace of the possible features.
 We investigated the effect of including between 4 and 256 topics, testing the
-performance, both in classifier accuracy and in training time as we increased
+performance, both in classifier accuracy and in training time, as we increased
 the number of topics.  We found that as we added more topics, the classifier
 accuracy always increased, but with diminishing returns, while the training
 of the algorithm became increasingly time consuming.  Beyond about 64 features
