@@ -415,16 +415,6 @@ if __name__ == '__main__':
 		find_specials=True,
 		remove_stops=True,
 		use_digrams=False,
-		limit=100,
+		limit=None,
 		classifier_rep='LinearSVC'
 	)
-
-	# CrossValCase().run(
-	# 	representation='as_tfidf',
-	# 	lemmatize=True,
-	# 	find_specials=True,
-	# 	remove_stops=True,
-	# 	use_digrams=False,
-	# 	limit=3000,
-	# 	classifier_rep='LinearSVC'
-	# )
