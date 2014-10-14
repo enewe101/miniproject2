@@ -481,8 +481,6 @@ right (i.e. giving optimality for larger neighborhoods), since the density
 of examples in all areas would increase, and so larger values of $k$ would 
 still represent neighborhoods that are quite close to the query point.
 
-
-
 \paragraph*{LDA: optimizing number of features}
 
 \begin{figure}
@@ -493,47 +491,89 @@ still represent neighborhoods that are quite close to the query point.
 \end{figure}
 
 LDA is an unsupervised algorithm, however it is necessary to specify the 
-number of features, or topics, that the algorithm should find.  The topics
-should not be confused with classes.  Rather, one expects the documents of 
-each class to be comprised of a mixture of topics.  The topics themselves 
-constitute basis vectors for a reduced subspace of the possible features.
-We investigated the effect of including between 4 and 256 topics, testing the
-performance, both in classifier accuracy and in training time as we increased
-the number of topics.  We found that as we added more topics, the classifier
-accuracy always increased, but with diminishing returns, while the training
-of the algorithm became increasingly time consuming.  Beyond about 64 features
-the gains in accuracy were not great.  We could not proceed past 256 features
-because the training time was excessive.
+number of features, or topics, that the algorithm should find.  Topics
+should not be confused with classes.  Topics represent, in a geometric sense,
+the vectors of greatest variation, in the space of word counts. Taken together,
+these topics, span a 
+subspace of the original feature space; this subspace is chosen in such a way
+that when the documents are projected onto it, most of the variation between
+documents is preserved.  The vectors are called ``topics'' because, often, 
+the vectors major components (terms) that are all related to a particular 
+identifiable topic.  By identifying a restricted set of topics that explain
+most of the variation of the documents, LDA produces a set of features that 
+are likely to be more informative to downstream classifier algorithms than
+the original word frequencies.
 
+To use LDA, it is necessary to specify the number of features (topics) that
+are to be extracted.  We repeatedly ran LDA, while specifying different numbers
+of features, to see the effect on a suite of downstream classifiers 
+(see fig X).  
+We investigated using between 4 and 256 topics; beyond 256 features the 
+the feature extraction became too computationally intensive.  
 
-\paragraph{Optimization of SVM parameters}
-TODO
+In general, the dowstream classifiers responded in one of two ways.  Either
+the classifier continually improved as more features were added
+(including multinomial naive bayes, naive bayes, linear SVC, and logistic 
+regression), or the classifier had peak performance near 16 features 
+(including the decision tree, and random forest classifiers).  The naive bayes
+classifier is a bit more difficult to place.  It technically has a maximum at
+8 features, but this is unusual for Gaussian naive bayes; normally adding
+more features continues to improve the accuracy but with diminishing returns.  
+It seems possible that the very high performance at 8 features is due to 
+variance in the error estimate.
 
+It makes sense that the decision tree and random forest method plateau
+in terms of accuracy.  These algorithms are very susceptible to overfitting
+when the depth of the tree is not controlled.  Since we were focussing an 
+assessing LDA accross many algoritms, which was already computationally 
+intensive, we did not attempt to detect and mitigate overfitting when building
+these trees for given LDA features.
 
-
-
-We also optimized certain basic parameters in the specific choices within the classifiers.  Some of these 
-decisions were based on considerations for computational efficiency
-
-- Naive Bayes 
-	- optimization of the representation: binary, counts, tfidf, tdicf
-		modified tficf, LDA
-
-- distance metric for nearest neighbor
-- Nearest neighbor -- tradeoff in time complexity and number of dimensions
-	- use of distance metric: euclidean, cosine similarity
-
-\section{Parameter selection method}
-- LDA -- selection of number of features
-- SVM what parameter values used
-
-
+Since we used Naive Bayes both with representations based on (weighted)
+word counts and LDA features, we can make a comparison accross these 
+representations.  When using word count-based representations, with the \textsc{tficf} weighting, stop-word removal, and including bigrams, we achieved an
+accuracy of 0.839.  Using the LDA features, we achieved an optimal result
+of 0.844.  These are remarkably close, with LDA being better.  In constructing 
+the word-count based representations, we looked at many combinations of 
+options to achieve the optimal result.  This shows that LDA does yield a 
+compact representations of highly relavent features for text classification.
 
 \section{Testing and validation}
-- the cross val method used
-- technically, the method used cannot produce an unbiased estimate of true
-	error for our best results, because of the repeated optimization
-	of features on the testing data
+\paragraph*{10-fold cross validation} 
+With one exception, the optimizations discussed above were done with 
+10-fold cross validation to estimate the error for each combination of 
+representation, classifier algorithm, and parameter settings we quoted above.
+
+\paragraph*{Validation for kNN}
+The kNN algorithm used a slight variation.  During each of the 10 folds of
+cross validation, an optimization was performed on the training portion of
+the data for the given fold.  Using the 9/10 training data for a given fold
+a nested cross-validation sub-routine was executed to determine the optimal 
+number of neighbors to use, by trying all values between 5 and 30.  
+The nested cross-validation was the same as the outer routine, but used only
+the training data for the given fold of the outer routine.  
+The optimization of $k$ was done independantly for each fold of the outer
+cross-validation routine, so no information from the test set was leaked into
+the training data.  Thus, this nested cross-validation procedure still
+provides an estimate of the true error.
+
+\paragraph*{Validation for ensemble classifiers}
+Above, we described the optimization of a variety of classifiers.  Taking 
+the predictions of each of these ``base classifiers'' as features, we then 
+constructed an ensemble classifier, with the hope of improving performance
+still further.
+
+This raised an interesting difficulty in validation: because the base-level
+algorithms had been optimized using the entire training set, there could be
+no guarantee that cross-validation of the ensemble classifier would give 
+an unbiased estimate of the true error.
+Indeed, we found that the performance of the ensemble classifier in 
+cross-validation was in great excess of the score that would actually be
+achieved when posting results to the leaderboard.  This demonstrates how
+overfitting can arise quite subtly.  For this reason, we do not report further
+on the validation of the ensemble classifier.  For the purposes of the 
+contest, we used leaderboard scores to test different configurations for the
+ensemble classifier.
 
 
 \section{Discussion}
