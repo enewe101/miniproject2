@@ -155,7 +155,10 @@ weight to those words which occur in
 few documents, based on the notion that these words are more descriminative.
 TFIDF weights were calculated using the following formula:
 
-XXXX
+\begin{align}
+	\textsc{tfidf}(t_i, d_j) = \textsc{tf}(t_i, d_j) \cdot \textsc{idf}(t_i) \\
+	= \textsc{tf}(t_i, d_j) \cdot \lg \frac{N}{n(t_i)}
+\end{align}
 
 However, because TFIDF was developped for the information retrieval application
 it does not take into account the extent to which a token appears in 
@@ -165,10 +168,18 @@ for the classification task; meanwhile a token which is quite rare overall,
 but equally represented in all classes, might not aid in the classification
 task.  Thus tficf was introduced by X.  The results of X showed that 
 this weighting provided a performant representation, beating several 
-information-theoretic weighting schemes.  TFICF weights are calculated 
-according to the following formula:
+information-theoretic weighting schemes.  The TFICF weight for term $t_i$ and
+document $d_j$, which is denoted $\textsc{tfidf}(t_i, d_j)$, is calculated 
+as follows:
+\begin{align}
+	\textsc{tfidf}(t_i, d_j) = \textsc{tf}(t_i, d_j) \cdot \textsc{icf}(t_i) \\
+	= \textsc{icf}(t_i, d_j) \cdot \lg \left(1 + \frac{C}{cf(t_i)}\right),
+\end{align}
+where $\textsc{tf}(t_i, d_j)$ is the frequency of term $t_i$ in document $d_j$,
+$\textsc{icf}(t_i)$ is the inverse \textit{class} frequency, $C$ is the 
+total number of classes, and $cf(t_i)$ is the number of classes containing at
+least one document with an occurence of $t_i$.
 
-XXXX
 
 Continuing the reasoning by which TFICF was developed, one might go further.
 Suppose one has a token which is very frequent in one class, but which still
@@ -176,8 +187,13 @@ occurs only a few times in each of the other classes.  One would expect this
 to be almost as descriminative as a feature which occured frequently in one
 class but not at all in another.  Based on this reasoning, we developped
 \textit{modified TFICF}, using the following formula:
-
-XXXX
+\begin{align}
+	\textsc{mtfidf}(t_i, d_j) 
+		&= \textsc{tf}(t_i, d_j) \cdot \textsc{micf}(t_i) \\
+	\textsc{micf}(t_i)
+		&\equiv \lg \left(1 
+			+ C\sum_j^C \frac{1}{j}\Big(n_{j}(t_i) - n_{j+1}(t_i)\Big) \right)
+\end{align}
 
 Our final representation used an unsupervised technique to detect the
 underlying `topic' composition of abstracts, using latent dirichlet allocation.
@@ -303,32 +319,171 @@ retraining all of the base-classifiers as well.  Instead,
 score as an estimate of our true error.
 
 \section{Optimization}
-Our optimization spanned multiple levels.  First, by trying as many kinds
-of representations and classification algorithms, we attempted to optimize 
-the representation and inductive methods.  In some cases we were able to try
-all the representations with a given classifier, such as with Naive Bayes for 
-example.
-
-\paragraph{NB: optimizing preprocessing}
 \begin{figure*}
 	\centering
 	\includegraphics[scale=0.45]{figs/NB_representations.pdf}
 	\caption{Caption\dots}
 	\label{fig:NB_representations}
 \end{figure*}
+Our optimization spanned multiple levels.  First, by trying as many kinds
+of representations and classification algorithms, we attempted to optimize 
+the representation and inductive methods.  In some cases we were able to try
+all the representations with a given classifier, such as with Naive Bayes for 
+example.  Additionally, we optimized parameter selections for specific
+induction methods, which we describe in the next section.
+
+\paragraph*{Optimizing preprocessing for Naive Bayes}
+Since the \textsc{NB} algorithm was not 
+computationally intensive, we used it to systematically investigate all of the
+various options for feature representations.  For each of the basic 
+representations (\textsc{tf}, \textsc{tfidf}, \textsc{tficf}, and 
+\textsc{mtficf}), we tried all combinations of the pre-processing options, 
+that is, with and without lemmatization, stop word removal, finding ``special 
+tokens'', and using digrams.
+
+The performance of the most basic representation, the term frequency 
+(\textsc{tf}), provides a good entry point to understanding the effects
+of all of these options (see fig X).  First observe that, when ranked by 
+performance, the \textsc{tf}-based representations occupy a wide range of 
+ranks.  However, the \textsc{tf} representations are always clustered together
+into groups of four.  Looking within these clusters, it is apparent that
+that including digrams, removing stop words,
+or doing both, successively improve the result of \textsc{tf} approaches,
+while lemmatization, and finding ``special tokens'' always had a slightly
+adverse effect.
+
+The \textsc{tfidf} representation was, in general, less affected by the
+pre-processing options, which can be seen (in fig X) because all the
+\textsc{tfidf} approaches are clustered together within an upper middle 
+range of ranks.  So, \textsc{tfidf} seems to make the classifier more robust
+against making the wrong choices.  However when the optimal pre-procesning 
+choices are made for each basic representation, \textsc{tfidf} performs
+the worst.  Interestingly, lemmatization and finding special tokens helped
+\textsc{tfidf}, unlike for all of the other representations.  
+Overall, \textsc{tfidf} moderates the performance, and improves it
+overall, but the best performance was not achievable with it.
+
+The \textsc{tficf} representation performed very well.  For a given set of 
+options, it always performed better than \textsc{if}, and performed best 
+overall when the optimal options were chosen.  It responded to options in the 
+same
+way as \textsc{if}, namely, including digrams, and especially removing stop
+words was helpful, but lemmatization and finding special tokens was not.
+
+The last basic representation was our experimental \textsc{mtficf}.  
+Unfortunately it tended to perform slightly worse than plain \textsc{tf} for
+a given selection of options.  However, for the optimal selection of options,
+it did outperform \textsc{tfidf}.  Admittedly, scoring the 
+features based on their contributions to the $l_1$-distance between the 
+class-conditioned distributions is very similar to what the Naive Bayes 
+algorithm already accomplishes by estimating the conditional probabilities.
+Therefore, using \textsc{mtficf} in connection with NB might merely 
+over-emphasizes the basis for descrimination that is already used.
 
 
-\paragraph{kNN: optimizing number of neighbours}
+\paragraph*{kNN distance metric}
+We next describe optimizations for the kNN algoritm.  One of the most important
+choices to be made in implementing a nearest-neighbour approach is to decide
+on to measure distance.  The Euclidean distance is in many ways
+the most intuitive, however, it is difficult to justify why it would be
+meaningful in the case of text classification.  One reason to doubt its 
+usefulness is that, for very high dimensional spaces (such as we have), 
+the euclidean distance suffers from ``sphere hardening'', in which all points
+begin to seem far from one another.
 
+Cosine similarity provides an alternative with a good track-record as a 
+similarity measure for text documents.  Technically cosine similarity is not
+a true distance metric, because it does not satisfy the triangle inequality,
+but this leads to no technical problems in using it in the kNN algorithm.
+Intuitively, because cosine similarity looks only at the angle between 
+the feature representations of documents, it is not affected by sphere 
+hardening.  
+
+For reference, the formal definitions for the euclidian distance, $L_2$ and
+cosine distance, $L_\mathrm{cos}$, calculated between two documents having 
+feature vectors $\mathbf{x}_1$ and $\mathbf{x}_2$ are as follows:
+\begin{align}
+	L_2(\mathbf{x}_1, \mathbf{x}_2) 
+		&= \sqrt{\sum_{m=1}^M (x_2^{(m)} - x_1^{(m)})^2}, \\
+	L_\mathrm{cos}(\mathbf{x}_1, \mathbf{x}_2) 
+		&= 1 - \frac{\mathbf{x}_1 \cdot \mathbf{x}_2}
+			{||\mathbf{x}_1|| ||\mathbf{x}_2||},
+\end{align}
+where $x_1^{(m)}$ designates the $m$th component of the vector $\mathbf{x}_1$,
+and where `$\cdot$' signifies the dot-product (inner product) of two vectors,
+and $||x_1||$ signifies the $L_2$-norm, which is the euclidean distance from
+the of the vector relative to the zero vector: $L_2(\mathbf{x}, \mathbf{0})$.
+
+Substituting the cosine distance in place of the Euclidean distance when 
+training on 10000 examples dramatically increased accuracy, which reached 0.71,
+up from 0.482.  These tests used feature reduction based on \textsc{tficf} 
+scores, which we explain next.
+
+\paragraph*{kNN feature reduction}
+The kNN algorithm tends to be more susceptible to irrelevant
+features than the NB and LDA algorithms, which limit the impact of 
+non-descriminative features.
+This susceptibility comes from the fact that kNN necessarily attributes equal 
+importance to all features, up to scaling of the feature axes 
+(and assuming isotropic distance metrics are used).  Thus, eliminating the
+least descriminative features outright can improve accuracy with kNN.
+
+Another reason to limit the number of features was that the kNN algorithm was
+very computationally intensive.  Thus, our feature reduction decisions reflect
+both an attempt to improve accuracy as well as to make executing the algorithm
+on many training examples feasible.
+To limit the number of features in a principled way, we employed lematization, 
+stop-word removal, and binning special tokens.  We also chose not to include
+digrams, even though it might improve the accuracy, because it would also more 
+than double the number of features.
+
+In addition we tried rejecting any terms that had $\textsc{tficf} \leq 1$.  
+Applying a cutoff for \textsc{tfidf} is a common
+way of diagnosing words that are universally too prevalent, and is a way to
+produce a stop-word list.  However, based on our results from the NB algorithm,
+it appeared that \textsc{tficf} would be a good choice for this.  When
+trained on 5000 examples using the cosine distance metric, eliminating 
+the features for which $\textsc{tficf}\leq 1$ improved the accuracy from 0.65
+to 0.69.  This suggests that \textsc{tficf} is a good metric for determining
+which terms have descriminative value in the classification task.
+
+\paragraph*{kNN optimizing number of neighbours}
 \begin{figure}
 	\centering
 	\includegraphics[scale=0.7]{figs/k_opt.pdf}
 	\caption{Caption\dots}
 	\label{fig:k_opt}
 \end{figure}
+In the k-Nearest Neighbours algorithm, we were fundamentally limited by 
+the computatinal intensity of the algorithm.  We are aware of solutions for
+this challenge, such as the use of $k$-d trees, which reduce the burden of
+finding the nearest neighbours.  However our initial findings were not 
+promising, and so we made a strategic decision to focus a greater amount of
+effort on optimizing the most promising approaches.  Nevertheless, by limiting
+the algorithm to work on a smaller subset of the training dataset, we 
+investigated the effects of changing the neighborhood size $k$, and of using
+alternative distance metrics.
+
+To investigate the effects of $k$, we randomly sampled 250 examples from the
+training data, and estimated the classification accuracy using 
+cross-validation (our approach to validation is described in a dedicated 
+section below).  
+
+The results show a distinct peak for a neighborhood size of 6 to 8 examples.
+Based on how kNN works, it is expected that neighborhood sizes that are 
+too small yield predictions with very high variance, whereas neighborhood 
+sizes that are too low lead to predictions that reflect the class priors
+rather than being dependant on the examples that are very close to the query 
+example.  Our 
+observations are in-line with these tendencies.  We do remark, however, that
+including all of the training data would likely shift peak accuracy to the
+right (i.e. giving optimality for larger neighborhoods), since the density
+of examples in all areas would increase, and so larger values of $k$ would 
+still represent neighborhoods that are quite close to the query point.
 
 
-\paragraph{LDA: optimizing number of features}
+
+\paragraph*{LDA: optimizing number of features}
 
 \begin{figure}
 	\centering
@@ -349,6 +504,7 @@ accuracy always increased, but with diminishing returns, while the training
 of the algorithm became increasingly time consuming.  Beyond about 64 features
 the gains in accuracy were not great.  We could not proceed past 256 features
 because the training time was excessive.
+
 
 \paragraph{Optimization of SVM parameters}
 TODO

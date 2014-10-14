@@ -38,8 +38,8 @@ def plot_kNN():
 	plot.line(X,Y)
 	plot.set_ylim(0.23, 0.57)
 	plot.set_xlim(-2,32)
-	plot.ylabel('accuracy')
-	plot.xlabel('number of neighbors')
+	plot.xlabel('accuracy')
+	plot.ylabel('number of neighbors')
 	plot.adjust(left=0.15)
 
 	plot.save(os.path.join(RESULTS_DIR, FNAME))
