@@ -353,20 +353,20 @@ class GenPredictionsCase (object):
 			as_vect=False
 		)
 
-		print 'CROSS VALIDATION'
+		# print 'CROSS VALIDATION'
 
-		cross_val_tester = CrossValTester(
-			dataset=train_set,
-			representation=classifier_rep
-		)
+		# cross_val_tester = CrossValTester(
+		# 	dataset=train_set,
+		# 	representation=classifier_rep
+		# )
 		
-		train_csv_filepath = classifier_rep + '_' + representation + '_train_preds.csv'
-		accuracy = cross_val_tester.cross_validate_to_file(
-			k=self.K,
-			csv_filepath=train_csv_filepath
-		)
+		# train_csv_filepath = classifier_rep + '_' + representation + '_train_preds.csv'
+		# accuracy = cross_val_tester.cross_validate_to_file(
+		# 	k=self.K,
+		# 	csv_filepath=train_csv_filepath
+		# )
 
-		print 'OVERALL ACCURACY:', accuracy
+		# print 'OVERALL ACCURACY:', accuracy
 
 		print 'TRAIN'
 
