@@ -249,6 +249,60 @@ class Data(object):
 
 	@enable_vectors
 	@add_caching
+	def as_trimmed_tficf(
+			self,
+			use_cache=True,
+			lemmatize=False,
+			find_specials=False,
+			remove_stops=False,
+			use_digrams=False,
+			data_part='train'
+		):
+
+		# compute the icf_scores
+		icf_scores = self.compute_icf_scores(
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams)
+
+		# now get the raw word frequencies
+		as_frequencies_data = self.as_frequencies(
+			use_cache, lemmatize, find_specials, remove_stops, use_digrams, 
+			data_part)
+
+		self.say('calculating trimemd_tficf\'s...')
+
+		# for each item in the dataset, multiply word frequency by icf_score
+		return_data = []
+		for item in as_frequencies_data:
+
+			# unpack the item
+			if data_part == 'train':
+				idx, frequencies, class_name = item
+			else:
+				idx, frequencies = item
+
+
+			# multiply word frequencies by their corresponding icf_scores
+			tficf_scores = {}
+			for word in frequencies:
+				score = icf_scores[word] if word in icf_scores else 1.0
+
+				# omit words with icf score less than 1.000001				
+				if score < 1.000001:
+					continue
+
+				tficf_scores[word] = frequencies[word] * score
+
+			if data_part == 'train':
+				return_data.append([idx, tficf_scores, class_name])
+			else:
+				return_data.append([idx, tficf_scores])
+
+
+		return return_data
+
+
+	@enable_vectors
+	@add_caching
 	def as_modified_tficf(
 			self,
 			use_cache=True,
