@@ -195,7 +195,7 @@ class CrossValTester(object):
 
 	def cross_validate_to_file (self, csv_filepath, k=None):
 		'''
-		Same as cross_validate except predictions on the folds are output
+		Same as cross_validate except predictions on the folds are also output
 		to a .csv file.
 		'''
 
@@ -303,7 +303,8 @@ class CrossValCase(object):
 
 class GenPredictionsCase (object):
 	'''
-	Runner for training on a train set and testing on a test set.
+	Runner for generating predictions on the training (through cross-validation)
+	and test set.
 	'''
 
 
@@ -335,7 +336,7 @@ class GenPredictionsCase (object):
 		limit=None
 	):
 		'''
-		
+		Generate training and test sets and then generate predictions.
 		'''
 		
 		assert(representation in self.ALLOWED_REPRESENTATIONS)
@@ -405,7 +406,9 @@ class GenPredictionsCase (object):
 				writer.writerow(pred)
 
 		# To make it compatible with sim_sweep
-		return accuracy
+		return 0.0
+
+		# return accuracy
 
 
 if __name__ == '__main__':

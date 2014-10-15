@@ -380,7 +380,6 @@ algorithm already accomplishes by estimating the conditional probabilities.
 Therefore, using \textsc{mtficf} in connection with NB might merely 
 over-emphasizes the basis for descrimination that is already used.
 
-
 \paragraph*{kNN distance metric}
 We next describe optimizations for the kNN algoritm.  One of the most important
 choices for implementing a nearest-neighbour approach is in deciding
@@ -391,7 +390,6 @@ similarity measure for text documents, so we tested this as well.
 Technically cosine distance is not
 a true distance metric, because it does not satisfy the triangle inequality,
 but this leads to no technical problems in using it for the kNN algorithm.
-
 
 For reference, the formal definitions for the euclidian distance, $L_2$ and
 cosine distance, $L_\mathrm{cos}$, calculated between two documents having 
@@ -518,7 +516,7 @@ variance in the error estimate.
 
 It makes sense that the decision tree and random forest method plateau
 in terms of accuracy.  These algorithms are very susceptible to overfitting
-when the depth of the tree is not controlled.  Since we were focussing an 
+when the depth of the tree is not controlled.  Since we were focusing and 
 assessing LDA accross many algoritms, which was already computationally 
 intensive, we did not attempt to detect and mitigate overfitting when building
 these trees for given LDA features.
@@ -530,16 +528,16 @@ With one exception, the optimizations discussed above were done with
 representation, classifier algorithm, and parameter settings we quoted above.
 
 \paragraph*{Validation for kNN}
-The kNN algorithm used a slight variation.  During each of the 10 folds of
-cross validation, an optimization was performed on the training portion of
-the data for the given fold.  Using the 9/10 training data for a given fold
-a nested cross-validation sub-routine was executed to determine the optimal 
-number of neighbors to use, by trying all values between 5 and 30.  
-The nested cross-validation was the same as the outer routine, but used only
-the training data for the given fold of the outer routine.  
-The optimization of $k$ was done independantly for each fold of the outer
-cross-validation routine, so no information from the test set was leaked into
-the training data.  Thus, this nested cross-validation procedure still
+The kNN algorithm used a slight variation of 10-fold cross-validation. For each of 
+the 10 folds, an optimization was performed on the training portion of the data 
+outside the given fold. The training data was partitioned into two sets: A
+sub-training and held-out set (The held-out set is 10\% of the training data). A
+kNN classifier was repeatedly trained on the sub-training set and tested on the
+held-out set to determine an optimal value for $k$ in the range 5 to 30 (This 
+procedure would have been a \textit{inner} cross-validation, but proved to be
+computationally infeasible). The optimization of $k$ was done independently for 
+each fold of the outer cross-validation routine, so no information from the test 
+fold was leaked into the training data.  Thus, this cross-validation variant still
 provides an estimate of the true error.
 
 \section{Discussion}
