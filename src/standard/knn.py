@@ -456,7 +456,7 @@ class CrossValCase(object):
 
 
 if __name__ == '__main__':
-	limit = int(sys.argv[1]) if sys.argv[1] else None
+	limit = int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 	CrossValCase().run(
 		dist='COSINE_DIST',
