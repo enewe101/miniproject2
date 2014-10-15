@@ -384,20 +384,14 @@ over-emphasizes the basis for descrimination that is already used.
 \paragraph*{kNN distance metric}
 We next describe optimizations for the kNN algoritm.  One of the most important
 choices for implementing a nearest-neighbour approach is in deciding
-on the distance metric.  The Euclidean distance is in many ways
-the most intuitive, however, it is difficult to justify why it would be
-meaningful in the case of text classification.  One reason to doubt its 
-usefulness is that, for very high dimensional spaces (such as we have), 
-the euclidean distance suffers from ``sphere hardening'', in which all points
-begin to seem far from one another.
-
+on the distance metric.  The Euclidean distance is one of the most intuitive
+distance metrics and we use that as a starting point.
 Cosine distance provides an alternative with a good track-record as a 
-similarity measure for text documents.  Technically cosine distance is not
+similarity measure for text documents, so we tested this as well.  
+Technically cosine distance is not
 a true distance metric, because it does not satisfy the triangle inequality,
 but this leads to no technical problems in using it for the kNN algorithm.
-Intuitively, because cosine distance considers only the angle between 
-the feature representations of documents, it is not affected by sphere 
-hardening.  
+
 
 For reference, the formal definitions for the euclidian distance, $L_2$ and
 cosine distance, $L_\mathrm{cos}$, calculated between two documents having 
@@ -529,15 +523,6 @@ assessing LDA accross many algoritms, which was already computationally
 intensive, we did not attempt to detect and mitigate overfitting when building
 these trees for given LDA features.
 
-Since we used Naive Bayes both with representations based on (weighted)
-word counts and LDA features, we can make a comparison accross these 
-representations.  When using word count-based representations, with the \textsc{tficf} weighting, stop-word removal, and including bigrams, we achieved an
-accuracy of 0.839.  Using the LDA features, we achieved an optimal result
-of 0.844.  These are remarkably close, with LDA being better.  In constructing 
-the word-count based representations, we looked at many combinations of 
-options to achieve the optimal result.  This shows that LDA does yield a 
-compact representations of highly relavent features for text classification.
-
 \section{Testing and validation}
 \paragraph*{10-fold cross validation} 
 With one exception, the optimizations discussed above were done with 
@@ -557,7 +542,42 @@ cross-validation routine, so no information from the test set was leaked into
 the training data.  Thus, this nested cross-validation procedure still
 provides an estimate of the true error.
 
-\paragraph*{Validation for ensemble classifiers}
+\section{Discussion}
+\paragraph*{Comparing \textsc{tficf} and LDA representations}
+Since we used Naive Bayes both with representations based on (weighted)
+word frequencies and LDA features, we can make a comparison accross these 
+representations.  When using word count-based representations, with the \textsc{tficf} weighting, stop-word removal, and including bigrams, we achieved an
+accuracy of 0.839.  Using the LDA features, we achieved an optimal result
+of 0.844.  These are remarkably close, with LDA being slightly better.
+
+To provide another point of comparison, we tried using SVC (support vector
+classifier) on the tficf representation.  Because this representation is 
+not compact when represented in vector form (each vector having a large
+number of zeros), this placed much greater demands on memory, so we restricted
+to a subsample of 10000 training examples.  This gave an accuracy of 0.876,
+which is also remarkably close to the LDA result, 0.877.
+
+In constructing the word-count based representations, we looked at many 
+combinations of options to achieve the optimal result.  Given that LDA 
+performed slightly better for both classifier methods, it would appear to
+provide a compact representations of highly relavent features for text 
+classification.  This is particularly useful in the case of SVC, where the
+memory requirements to train on the full dataset were too great when LDA was 
+not used.  
+
+\paragraph*{The superiority of cosine similarity}
+It is worth briefly discussing the results from the kNN algorithm which 
+showed that the cosine similarity was much better than the euclidean distance.
+the most intuitive, however, it is difficult to justify why it would be
+meaningful in the case of text classification.  One reason to doubt its 
+usefulness is that, for very high dimensional spaces (such as we have), 
+the euclidean distance suffers from ``sphere hardening'', in which all points
+begin to seem far from one another.
+Intuitively, because cosine distance considers only the angle between 
+the feature representations of documents, it is not affected by sphere 
+hardening.  
+
+\paragraph*{Construction of ensemble classifiers}
 Above, we described the optimization of a variety of classifiers.  Taking 
 the predictions of each of these ``base classifiers'' as features, we then 
 constructed an ensemble classifier, with the hope of improving performance
@@ -575,26 +595,35 @@ on the validation of the ensemble classifier.  For the purposes of the
 contest, we used leaderboard scores to test different configurations for the
 ensemble classifier.
 
+\section{conclusion}
+In the study presented here, we investigated a range of pre-processing,
+representation, and classifier algorithms to classify academic
+articles into one of four classes (cs, math, stats, and physics), based on 
+the abstract text.  We found that LDA provided a very compact representation 
+of the abstracts, and produced better results than term-frequency based 
+representations when combined with Naive Bayes and SVC.  Still, when 
+digrams are included, stop words are removed, and an inverse class-frequency
+or inverse document-frequency weighting is applied, the term frequency-based
+representations performed almost as well.  The advantage of the LDA algorithm
+is that it is more compact, and it adapts to the dataset, whereas the 
+particular details of the optimal term frequency-based representation are
+likely to vary from dataset to dataset, and between classifiers.
 
-\section{Discussion}
+The most performant classifier was SVC for both the LDA and word 
+frequency-based representations.  We found that the kNN approach was memory 
+and time intensive, and did not provide good results.  As is often the case
+Naive Bayes performed quite well, despite the simplicity of its implementation.
 
-- visualization of performance in validation
-
-- Naive Bayes results
-	remarkable increase in performance by removing stop words and using the
-	tficf representation.  Adding digrams also improved the result.
-
-- Nearest Neighbor results
-	- cosine much better than euclidean
-	- performance was not great overall
-	- comment on the difficulty of running with large numbers of data
-
-- LDA
-	- quite good results for Decision Trees, Naive Bayes, and SVM
-
-- SVM + tficf results
-
-- ensemble technique
+We attempted to build an ensemble classifier using a decision tree that
+took as input the predictions made by various combinations of classifiers
+discussed above.  We were unable to construct such an ensemble classifier
+with better performance than its best component classifiers.  An important 
+barrier in this process was the fact that we could not use cross validation
+of the training data to validate the ensemble, because it had been used to
+construct the base classifiers.  In principle, one could re-create the base
+classifiers while withholding a portion of training data, to cross-validate
+the entire ensemble construction process.  We did not pursue this, however,
+due to the sheer computational intensity of such an approach.
 
 \begin{center}
 	\textit{
