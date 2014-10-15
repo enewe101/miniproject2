@@ -412,12 +412,14 @@ class GenPredictionsCase (object):
 
 
 if __name__ == '__main__':
+	limit = int(sys.argv[1]) if sys.argv[1] else None
+
 	CrossValCase().run(
 		representation='as_tficf',
 		lemmatize=True,
 		find_specials=True,
 		remove_stops=True,
 		use_digrams=False,
-		limit=None,
+		limit=limit,
 		classifier_rep='LinearSVC'
 	)
