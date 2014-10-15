@@ -178,6 +178,10 @@ class Data(object):
 				'use of Data...')
 			merge_input_output()
 
+		# get number of test examples
+		with open(os.path.join(data_dir, self.RAW_TEST), 'r') as f:
+			num_test_examples = len(f.readlines()) - 1
+
 		# load raw data into memory
 		reader_train = csv.reader(
 			open(os.path.join(data_dir, self.RAW_MERGED), 'r'))
@@ -191,7 +195,13 @@ class Data(object):
 		# limit can be used to limit the amount of data used
 		if limit is not None:
 			self.data = [tuple(reader_train.next()) for i in range(limit)]
-			self.test_data = [tuple(reader_test.next()) for i in range(limit)]
+
+			# if number of test examples is less than the limit, then include
+			# all test examples
+			if num_test_examples < limit:
+				self.test_data = [tuple(row) for row in reader_test] 
+			else:
+				self.test_data = [tuple(reader_test.next()) for i in range(limit)]
 
 		else:
 			self.data = [tuple(row) for row in reader_train] 
